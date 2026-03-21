@@ -1,0 +1,26 @@
+# Secrets — NEVER commit these
+.env
+service-account-key.json
+*-key.json
+credentials*.json
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Terraform state
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+
+# Data files
+*.csv
+*.parquet
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
