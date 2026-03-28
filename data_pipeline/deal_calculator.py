@@ -539,7 +539,7 @@ def analyze_deal(
         ml_score = max(0, min(100, ml_score))  # Clamp between 0-100
         scoring = {
             "deal_score":     ml_score,  # Regressor score added below
-            "recommendation": ml_result["recommendation"],
+            "recommendation": ml_result["recommendation"].replace("PASS", "AVOID"),
             "emoji":          {"BUY": "🟢", "WATCH": "🟡", "AVOID": "🔴"}.get(
                                 ml_result["recommendation"], "⚪"
                               ),
@@ -595,7 +595,7 @@ def analyze_deal(
 
         # AI Score
         "deal_score":        scoring.get("deal_score") or 0,
-        "recommendation":    scoring["recommendation"],
+        "recommendation":    scoring["recommendation"].replace("PASS", "AVOID"),
         "top_reasons":       scoring["top_reasons"],
 
         # Projections
