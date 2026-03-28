@@ -114,7 +114,7 @@ class GeminiExplainer:
             cash_on_cash          = deal.get("cash_on_cash",     0) or 0,
             monthly_mortgage      = deal.get("monthly_mortgage", 0) or 0,
             deal_score            = deal.get("deal_score",       0) or 0,
-            recommendation        = rec
+            recommendation        = rec,
             neighborhood_score    = deal.get("neighborhood_score", 0) or 0,
             five_year_value       = final_value,
             five_year_appreciation= appreciation,
