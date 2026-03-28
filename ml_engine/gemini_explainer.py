@@ -103,6 +103,7 @@ class GeminiExplainer:
         last_year    = five_year[-1] if five_year else {}
         appreciation = last_year.get("total_appreciation", 0) or 0
         final_value  = last_year.get("property_value", 0) or 0
+        rec = deal.get("recommendation", "WATCH").replace("PASS", "AVOID")
         return DEAL_PROMPT.format(
             address               = deal.get("address", "this property"),
             purchase_price        = deal.get("purchase_price",   0) or 0,
@@ -113,7 +114,7 @@ class GeminiExplainer:
             cash_on_cash          = deal.get("cash_on_cash",     0) or 0,
             monthly_mortgage      = deal.get("monthly_mortgage", 0) or 0,
             deal_score            = deal.get("deal_score",       0) or 0,
-            recommendation        = deal.get("recommendation", "WATCH"),
+            recommendation        = rec
             neighborhood_score    = deal.get("neighborhood_score", 0) or 0,
             five_year_value       = final_value,
             five_year_appreciation= appreciation,
