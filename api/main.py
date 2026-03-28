@@ -30,11 +30,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
 from dotenv import load_dotenv
+from ml_engine.gemini_explainer import GeminiExplainer
 
+# Initialize Gemini once at startup
+gemini_explainer = GeminiExplainer()
 # Add project root to path so we can import our modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-load_dotenv()
+from pathlib import Path
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 # ── FastAPI App Setup ─────────────────────────────────────────────
 app = FastAPI(
@@ -306,6 +309,17 @@ async def analyze_deal(request: AnalyzeRequest):
             detail      = f"Analysis failed: {str(e)}"
         )
 
+@app.post("/explain")
+async def explain_deal(deal_result: dict):
+    """
+    Generate Gemini AI explanation for a deal analysis result.
+    Powered by Google Gemini 1.5 Flash via Vertex AI.
+    """
+    try:
+        result = gemini_explainer.explain_deal(deal_result)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ── Run locally ───────────────────────────────────────────────────
 if __name__ == "__main__":

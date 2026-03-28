@@ -17,6 +17,7 @@ from datetime import datetime
 import pandas as pd
 import os
 from fpdf import FPDF
+import urllib.parse
 
 # ── Page Configuration ────────────────────────────────────────────
 st.set_page_config(
@@ -96,6 +97,103 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+def validate_and_autocomplete_address(partial_address: str, api_key: str) -> dict:
+    """
+    Two functions in one:
+    1. Autocomplete — suggests addresses as user types
+    2. Validation — confirms address exists and returns
+       standardized format + lat/lng + zip code
+
+    Uses Google Places API:
+    - Autocomplete endpoint for suggestions
+    - Place Details endpoint for full validation
+    """
+    if not partial_address or len(partial_address) < 5:
+        return {"suggestions": [], "validated": None}
+
+    # ── Autocomplete ──────────────────────────────────────────
+    autocomplete_url = "https://maps.googleapis.com/maps/api/place/autocomplete/json"
+    params = {
+        "input":      partial_address,
+        "types":      "address",
+        "components": "country:us",  # US addresses only
+        "key":        api_key,
+    }
+
+    try:
+        response = requests.get(autocomplete_url, params=params, timeout=5)
+        data = response.json()
+
+        suggestions = []
+        place_ids = []
+
+        if data.get("status") == "OK":
+            for prediction in data.get("predictions", [])[:5]:
+                suggestions.append(prediction["description"])
+                place_ids.append(prediction["place_id"])
+
+        return {
+            "suggestions": suggestions,
+            "place_ids":   place_ids,
+            "status":      data.get("status"),
+        }
+    except Exception as e:
+        return {"suggestions": [], "error": str(e)}
+
+
+def get_place_details(place_id: str, api_key: str) -> dict:
+    """
+    Given a Google Place ID, returns full validated address details:
+    - Formatted address
+    - Street number, city, state, zip
+    - Latitude and longitude
+    """
+    details_url = "https://maps.googleapis.com/maps/api/place/details/json"
+    params = {
+        "place_id": place_id,
+        "fields":   "formatted_address,address_components,geometry",
+        "key":      api_key,
+    }
+
+    try:
+        response = requests.get(details_url, params=params, timeout=5)
+        data = response.json()
+
+        if data.get("status") != "OK":
+            return {}
+
+        result = data["result"]
+
+        # Parse address components
+        components = {}
+        for comp in result.get("address_components", []):
+            types = comp["types"]
+            if "street_number"               in types:
+                components["street_number"] = comp["long_name"]
+            elif "route"                     in types:
+                components["street"]        = comp["long_name"]
+            elif "locality"                  in types:
+                components["city"]          = comp["long_name"]
+            elif "administrative_area_level_1" in types:
+                components["state"]         = comp["short_name"]
+            elif "postal_code"               in types:
+                components["zip_code"]      = comp["long_name"]
+
+        # Build clean address
+        street = f"{components.get('street_number', '')} {components.get('street', '')}".strip()
+
+        return {
+            "formatted_address": result.get("formatted_address", ""),
+            "street":            street,
+            "city":              components.get("city", ""),
+            "state":             components.get("state", ""),
+            "zip_code":          components.get("zip_code", ""),
+            "latitude":          result["geometry"]["location"]["lat"],
+            "longitude":         result["geometry"]["location"]["lng"],
+            "validated":         True,
+        }
+    except Exception as e:
+        return {"error": str(e), "validated": False}
 
 # ── Helper Functions ──────────────────────────────────────────────
 def call_analyze_api(
@@ -532,17 +630,101 @@ with st.sidebar:
 
 
 # ── Main Input Form ───────────────────────────────────────────────
-st.markdown('<div class="section-header">📄 Download Report</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-header">🔍 Property Analysis</div>', unsafe_allow_html=True)
 
+# ── Address Autocomplete ──────────────────────────────────────────
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
+GOOGLE_MAPS_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
+
+# Initialize session state for address
+if "validated_address" not in st.session_state:
+    st.session_state.validated_address = ""
+if "selected_address_display" not in st.session_state:
+    st.session_state.selected_address_display = ""
+if "address_validated" not in st.session_state:
+    st.session_state.address_validated = False
+if "validated_zip"      not in st.session_state:
+    st.session_state.validated_zip      = ""
+if "address_validated"  not in st.session_state:
+    st.session_state.address_validated  = False
+if "selected_place_id"  not in st.session_state:
+    st.session_state.selected_place_id  = ""
 
 col1, col2, col3 = st.columns([3, 2, 2])
 
 with col1:
-    address = st.text_input(
-        "Property Address",
-        placeholder = "123 Main St, Raleigh, NC 27601",
-        help        = "Enter the full property address"
+    # Show validated address OR text input
+    if st.session_state.address_validated:
+        # Show clean validated address — hide text input
+        st.markdown(f"""
+        <div style='background:#F0FDF4; border:1px solid #86EFAC; 
+        border-radius:8px; padding:12px 16px; font-size:15px; 
+        color:#166534; font-weight:500;'>
+        📍 {st.session_state.selected_address_display}
+        </div>
+        """, unsafe_allow_html=True)
+        address_input = st.session_state.selected_address_display
+    else:
+        address_input = st.text_input(
+            "Property Address",
+            placeholder = "Start typing address...",
+            help        = "Type an address to see suggestions",
+            key         = "address_input",
+        )
+
+    # Show autocomplete suggestions
+    if address_input and len(address_input) >= 5 and GOOGLE_MAPS_KEY:
+        autocomplete = validate_and_autocomplete_address(
+            address_input, GOOGLE_MAPS_KEY
+        )
+        suggestions = autocomplete.get("suggestions", [])
+        place_ids   = autocomplete.get("place_ids", [])
+
+        if suggestions:
+            st.markdown("**Suggestions:**")
+            for i, (suggestion, place_id) in enumerate(
+                zip(suggestions, place_ids)
+            ):
+                if st.button(
+                    f"📍 {suggestion}",
+                    key  = f"suggestion_{i}",
+                    use_container_width = True,
+                ):
+                    # Get full details for selected address
+                    details = get_place_details(place_id, GOOGLE_MAPS_KEY)
+                    if details.get("validated"):
+                        clean_address = details["formatted_address"].replace(", USA", "")
+                        st.session_state.validated_address  = clean_address
+                        st.session_state.validated_zip      = details.get("zip_code", "")
+                        st.session_state.address_validated  = True
+                        st.session_state.selected_address_display = clean_address
+
+                        st.rerun()
+
+    # Show validated address confirmation
+    if st.session_state.address_validated:
+        st.success(f"✅ Validated: {st.session_state.validated_address}")
+        if st.button("✏️ Change address", key="change_address"):
+            st.session_state.address_validated  = False
+            st.session_state.validated_address  = ""
+            st.session_state.validated_zip      = ""
+            st.session_state.selected_address_display = ""
+            st.rerun()
+
+    # Final address to use
+    address = (
+        st.session_state.selected_address_display
+        if st.session_state.address_validated
+        else address_input
     )
+
+    # Validation status indicator
+    if address and not st.session_state.address_validated:
+        if not GOOGLE_MAPS_KEY:
+            st.caption("⚠️ Add GOOGLE_MAPS_API_KEY to .env for address validation")
+        else:
+            st.caption("👆 Select a suggestion above to validate address")
 
 with col2:
     purchase_price = st.number_input(
@@ -565,9 +747,10 @@ with col3:
     )
 
 # Extract zip code from address
-zip_code = None
-if address:
-    import re
+# Use validated zip or extract from address
+import re
+zip_code = st.session_state.get("validated_zip") or None
+if not zip_code and address:
     zip_match = re.search(r'\b(\d{5})\b', address)
     if zip_match:
         zip_code = zip_match.group(1)
@@ -731,6 +914,37 @@ if analyze_clicked:
                 else:
                     st.warning("PDF unavailable — analysis data shown above.")
 
+
+                # ── Gemini AI Explanation ─────────────────────────
+                st.markdown('<div class="section-header">🤖 AI Investment Analysis</div>', unsafe_allow_html=True)
+
+                with st.spinner("🤖 Gemini 2.5 Flash is analyzing this deal..."):
+                    try:
+                        explain_response = requests.post(
+                            f"{API_URL}/explain",
+                            json    = result,
+                            timeout = 30,
+                        )
+                        explain_data  = explain_response.json()
+                        explanation   = explain_data.get("explanation", "")
+                        model_used    = explain_data.get("model", "AI")
+                        status        = explain_data.get("status", "")
+
+                        if explanation:
+                            st.markdown(f"""
+                            <div style='background:#EFF6FF; border-left:4px solid #2563EB;
+                            border-radius:8px; padding:16px 20px; margin:8px 0;
+                            font-size:15px; color:#1E3A5F; line-height:1.6;'>
+                            💬 {explanation}
+                            </div>
+                            """, unsafe_allow_html=True)
+                            if status == "success":
+                                st.caption(f"⚡ Powered by {model_used}")
+                            else:
+                                st.caption(f"📊 {model_used}")
+
+                    except Exception as e:
+                        st.caption("AI explanation unavailable.")
                 st.success("✅ Analysis complete! Report ready to download.")
 
             except requests.exceptions.Timeout:

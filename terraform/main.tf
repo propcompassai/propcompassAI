@@ -262,3 +262,23 @@ resource "google_artifact_registry_repository" "prop_compass" {
   format        = "DOCKER"
   depends_on    = [google_project_service.artifact_registry]
 }
+# Enable Places API
+resource "google_project_service" "places_api" {
+  service            = "places-backend.googleapis.com"
+  disable_on_destroy = false
+}
+
+# Enable Maps JavaScript API  
+resource "google_project_service" "maps_api" {
+  service            = "maps-backend.googleapis.com"
+  disable_on_destroy = false
+}
+
+# Store Google Maps key in Secret Manager
+resource "google_secret_manager_secret" "google_maps_key" {
+  secret_id = "google-maps-api-key"
+  replication {
+    auto {}
+  }
+  depends_on = [google_project_service.secret_manager]
+}

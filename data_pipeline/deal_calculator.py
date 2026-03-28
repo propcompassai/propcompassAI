@@ -378,7 +378,7 @@ def calculate_deal_score(
         recommendation = "WATCH"
         emoji = "🟡"
     else:
-        recommendation = "PASS"
+        recommendation = "AVOID"
         emoji = "🔴"
 
     return {
@@ -540,7 +540,7 @@ def analyze_deal(
         scoring = {
             "deal_score":     ml_score,  # Regressor score added below
             "recommendation": ml_result["recommendation"],
-            "emoji":          {"BUY": "🟢", "WATCH": "🟡", "PASS": "🔴"}.get(
+            "emoji":          {"BUY": "🟢", "WATCH": "🟡", "AVOID": "🔴"}.get(
                                 ml_result["recommendation"], "⚪"
                               ),
             "top_reasons":    [
