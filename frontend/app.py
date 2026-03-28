@@ -238,7 +238,7 @@ def recommendation_badge(rec: str) -> str:
     badges = {
         "BUY":   ("🟢", "badge-buy",   "BUY"),
         "WATCH": ("🟡", "badge-watch", "WATCH"),
-        "PASS":  ("🔴", "badge-pass",  "PASS"),
+        "AVOID":  ("🔴", "badge-pass",  "AVOID"),
     }
     emoji, css, label = badges.get(rec, ("⚪", "badge-watch", rec))
     return f'<span class="{css}">{emoji} {label}</span>'
@@ -380,7 +380,7 @@ def build_neighborhood_gauge(score: float) -> go.Figure:
 
 def build_deal_score_gauge(score: float, rec: str) -> go.Figure:
     """Build deal score gauge."""
-    colors = {"BUY": "#16A34A", "WATCH": "#F59E0B", "PASS": "#EF4444"}
+    colors = {"BUY": "#16A34A", "WATCH": "#F59E0B", "AVOID": "#EF4444"}
     color  = colors.get(rec, "#6B7280")
 
     fig = go.Figure(go.Indicator(
@@ -472,7 +472,7 @@ def generate_pdf_report(result: dict) -> bytes:
     rec_colors = {
         "BUY":   (22, 163, 74),
         "WATCH": (245, 158, 11),
-        "PASS":  (220, 38, 38),
+        "AVOID":  (220, 38, 38),
     }
     r, g, b = rec_colors.get(rec, (107, 114, 128))
     pdf.set_fill_color(r, g, b)
@@ -622,7 +622,7 @@ with st.sidebar:
     |-------|--------|
     | 70-100 | 🟢 BUY |
     | 45-69  | 🟡 WATCH |
-    | 0-44   | 🔴 PASS |
+    | 0-44   | 🔴 AVOID |
     """)
 
     st.markdown("---")

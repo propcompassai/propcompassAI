@@ -12,7 +12,7 @@ Why BigQuery ML?
 - Production ready immediately after training
 
 We train two models:
-1. Logistic Regression — predicts BUY/WATCH/PASS classification
+1. Logistic Regression — predicts BUY/WATCH/AVOID classification
 2. Linear Regression  — predicts deal score 0-100
 
 Interview tip: "I used BigQuery ML to train classification
@@ -53,14 +53,14 @@ TRAINING_DATA_QUERY = f"""
         AND monthly_cashflow IS NOT NULL
         AND gross_rent_mult  IS NOT NULL
         AND deal_score       IS NOT NULL
-        AND recommendation   IN ('BUY', 'WATCH', 'PASS')
+        AND recommendation   IN ('BUY', 'WATCH', 'AVOID')
 """
 
 
 def train_classifier(client: bigquery.Client) -> None:
     """
     Train a Logistic Regression classifier.
-    Predicts: BUY / WATCH / PASS
+    Predicts: BUY / WATCH / AVOID
 
     Logistic Regression works well here because:
     - Our classes are clearly separable by metrics
@@ -346,7 +346,7 @@ if __name__ == "__main__":
             "down_payment_pct":  20,
         },
         {
-            "name":             "Bad Deal (should be PASS)",
+            "name":             "Bad Deal (should be AVOID)",
             "cap_rate":          2.7,
             "cash_on_cash":     -16.9,
             "monthly_cashflow": -1392,
@@ -372,7 +372,7 @@ if __name__ == "__main__":
     for deal in test_deals:
         name = deal.pop("name")
         result = predict_single_deal(client, **deal)
-        emoji = {"BUY": "🟢", "WATCH": "🟡", "PASS": "🔴"}.get(
+        emoji = {"BUY": "🟢", "WATCH": "🟡", "AVOID": "🔴"}.get(
             result["recommendation"], "⚪"
         )
         print(f"\n   {name}")
