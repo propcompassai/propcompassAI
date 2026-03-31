@@ -342,44 +342,92 @@ def build_cashflow_chart(result: dict) -> go.Figure:
 
 
 def build_expense_breakdown_chart(result: dict) -> go.Figure:
-    """Build expense breakdown pie chart."""
+    """Build expense breakdown donut chart with exact amounts."""
     breakdown = result.get("expense_breakdown", {})
+    mortgage  = result.get("monthly_mortgage", 0) or 0
+    rent      = result.get("monthly_rent", 0) or 0
 
-    labels = []
-    values = []
-    colors = ["#2563EB", "#16A34A", "#F59E0B", "#EF4444", "#8B5CF6"]
+    # Build all components
+    items = []
 
-    expense_map = {
-        "tax_monthly":         "Property Tax",
-        "insurance_monthly":   "Insurance",
-        "vacancy_monthly":     "Vacancy Loss",
-        "maintenance_monthly": "Maintenance",
-        "mgmt_monthly":        "Management",
-    }
+    # Mortgage first
+    items.append({
+        "label": "Mortgage",
+        "value": mortgage,
+        "color": "#1B3A6B"
+    })
 
-    for key, label in expense_map.items():
+    # Operating expenses
+    expense_map = [
+        ("tax_monthly",         "Property Tax",    "#EF4444"),
+        ("insurance_monthly",   "Insurance",       "#F59E0B"),
+        ("vacancy_monthly",     "Vacancy",         "#8B5CF6"),
+        ("maintenance_monthly", "Maintenance",     "#16A34A"),
+        ("mgmt_monthly",        "Property Mgmt",   "#2563EB"),
+    ]
+
+    for key, label, color in expense_map:
         val = breakdown.get(key, 0) or 0
         if val > 0:
-            labels.append(label)
-            values.append(val)
+            items.append({
+                "label": label,
+                "value": val,
+                "color": color
+            })
 
-    # Add mortgage
-    labels.append("Mortgage")
-    values.append(result["monthly_mortgage"])
+    total = sum(i["value"] for i in items)
+
+    labels = [
+        f"{i['label']}<br>${i['value']:,.0f}/mo ({i['value']/total*100:.1f}%)"
+        if total > 0 else i['label']
+        for i in items
+    ]
+    values = [i["value"] for i in items]
+    colors = [i["color"] for i in items]
 
     fig = go.Figure(go.Pie(
-        labels    = labels,
-        values    = values,
-        hole      = 0.4,
-        marker    = dict(colors=colors + ["#1B3A6B"]),
+        labels           = labels,
+        values           = values,
+        hole             = 0.45,
+        marker           = dict(
+            colors       = colors,
+            line         = dict(color="white", width=2)
+        ),
+        textinfo         = "percent",
+        hovertemplate    = "<b>%{label}</b><extra></extra>",
+        textfont         = dict(size=11),
     ))
-    fig.update_layout(
-        title  = "Monthly Cost Breakdown",
-        height = 320,
-        margin = dict(t=50, b=20, l=20, r=20),
-    )
-    return fig
 
+    fig.update_layout(
+        title      = dict(
+            text   = f"Monthly Cost Breakdown — ${total:,.0f}/mo total",
+            font   = dict(size=13),
+            x      = 0.5
+        ),
+        height     = 340,
+        margin     = dict(t=50, b=20, l=20, r=20),
+        legend     = dict(
+            orientation = "v",
+            x           = 1.02,
+            y           = 0.5,
+            font        = dict(size=10),
+        ),
+        showlegend = True,
+    )
+
+    # Add total in center
+    fig.add_annotation(
+        text       = f"${total:,.0f}<br>/month",
+        x          = 0.5,
+        y          = 0.5,
+        font       = dict(size=13, color="#1B3A6B"),
+        showarrow  = False,
+        xref       = "paper",
+        yref       = "paper",
+        align      = "center",
+    )
+
+    return fig
 
 def build_neighborhood_gauge(score: float) -> go.Figure:
     """Build neighborhood score gauge chart."""
