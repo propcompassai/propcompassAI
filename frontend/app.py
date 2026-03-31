@@ -97,7 +97,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-def validate_and_autocomplete_address(partial_address: str, api_key: str) -> dict:
+def validate_and_autocomplete_address(
+    partial_address: str,
+    api_key: str,
+    state: str = "NC"
+) -> dict:
     """
     Two functions in one:
     1. Autocomplete — suggests addresses as user types
@@ -108,7 +112,7 @@ def validate_and_autocomplete_address(partial_address: str, api_key: str) -> dic
     - Autocomplete endpoint for suggestions
     - Place Details endpoint for full validation
     """
-    if not partial_address or len(partial_address) < 5:
+    if not partial_address or len(partial_address) < 3:
         return {"suggestions": [], "validated": None}
 
     # ── Autocomplete ──────────────────────────────────────────
@@ -116,8 +120,11 @@ def validate_and_autocomplete_address(partial_address: str, api_key: str) -> dic
     params = {
         "input":      partial_address,
         "types":      "address",
-        "components": "country:us",  # US addresses only
+        "components": "country:us",
         "key":        api_key,
+        "location":   "35.6490,-78.8328",  # Holly Springs NC center
+        "radius":     "80000",              # 80km radius = covers all NC
+        "strictbounds": "false",            # don't restrict, just bias
     }
 
     try:
@@ -125,13 +132,18 @@ def validate_and_autocomplete_address(partial_address: str, api_key: str) -> dic
         data = response.json()
 
         suggestions = []
-        place_ids = []
+        place_ids   = []
 
         if data.get("status") == "OK":
-            for prediction in data.get("predictions", [])[:5]:
-                suggestions.append(prediction["description"])
+            for prediction in data.get("predictions", []):
+                desc = prediction["description"]
+                # Filter by selected state
+                if state and f", {state}," not in desc and f", {state} " not in desc:
+                    continue
+                suggestions.append(desc)
                 place_ids.append(prediction["place_id"])
-
+                if len(suggestions) >= 5:
+                    break
         return {
             "suggestions": suggestions,
             "place_ids":   place_ids,
@@ -633,84 +645,121 @@ with st.sidebar:
 st.markdown('<div class="section-header">🔍 Property Analysis</div>', unsafe_allow_html=True)
 
 # ── Address Autocomplete ──────────────────────────────────────────
-from dotenv import load_dotenv
-load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
+# ── Address Autocomplete ──────────────────────────────────────────
 GOOGLE_MAPS_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 
-# Initialize session state for address
-if "validated_address" not in st.session_state:
-    st.session_state.validated_address = ""
+from dotenv import load_dotenv
+from pathlib import Path
+load_dotenv(Path(__file__).parent.parent / ".env")
+GOOGLE_MAPS_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
+
+# Initialize session state
+if "validated_address"       not in st.session_state:
+    st.session_state.validated_address       = ""
 if "selected_address_display" not in st.session_state:
     st.session_state.selected_address_display = ""
-if "address_validated" not in st.session_state:
-    st.session_state.address_validated = False
-if "validated_zip"      not in st.session_state:
-    st.session_state.validated_zip      = ""
-if "address_validated"  not in st.session_state:
-    st.session_state.address_validated  = False
-if "selected_place_id"  not in st.session_state:
-    st.session_state.selected_place_id  = ""
+if "address_validated"       not in st.session_state:
+    st.session_state.address_validated       = False
+if "validated_zip"           not in st.session_state:
+    st.session_state.validated_zip           = ""
+if "selected_state"          not in st.session_state:
+    st.session_state.selected_state          = "NC"
 
 col1, col2, col3 = st.columns([3, 2, 2])
 
 with col1:
-    # Show validated address OR text input
+    # ── State selector ────────────────────────────────────────
+    US_STATES = [
+        "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
+        "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
+        "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+        "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
+        "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"
+    ]
+
+    selected_state = st.selectbox(
+        "State",
+        options   = US_STATES,
+        index     = US_STATES.index("NC"),
+        key       = "state_selector",
+        help      = "Select state to filter address suggestions"
+    )
+    st.session_state.selected_state = selected_state
+
+    # ── Address input ─────────────────────────────────────────
     if st.session_state.address_validated:
-        # Show clean validated address — hide text input
         st.markdown(f"""
-        <div style='background:#F0FDF4; border:1px solid #86EFAC; 
-        border-radius:8px; padding:12px 16px; font-size:15px; 
+        <div style='background:#F0FDF4; border:1px solid #86EFAC;
+        border-radius:8px; padding:12px 16px; font-size:15px;
         color:#166534; font-weight:500;'>
         📍 {st.session_state.selected_address_display}
         </div>
         """, unsafe_allow_html=True)
         address_input = st.session_state.selected_address_display
+
+        if st.button("✏️ Change address", key="change_address"):
+            st.session_state.address_validated        = False
+            st.session_state.validated_address        = ""
+            st.session_state.selected_address_display = ""
+            st.session_state.validated_zip            = ""
+            st.rerun()
     else:
         address_input = st.text_input(
             "Property Address",
-            placeholder = "Start typing address...",
-            help        = "Type an address to see suggestions",
+            placeholder = f"Start typing {selected_state} address...",
+            help        = "Type 3+ characters to see suggestions",
             key         = "address_input",
         )
 
-    # Show autocomplete suggestions
-    if address_input and len(address_input) >= 5 and GOOGLE_MAPS_KEY:
-        autocomplete = validate_and_autocomplete_address(
-            address_input, GOOGLE_MAPS_KEY
-        )
-        suggestions = autocomplete.get("suggestions", [])
-        place_ids   = autocomplete.get("place_ids", [])
+        # ── Auto-trigger after 3+ characters ─────────────────
+    # ── Auto-trigger after 3+ characters ─────────────────
+        if (address_input
+                and len(address_input) >= 3
+                and GOOGLE_MAPS_KEY):
 
-        if suggestions:
-            st.markdown("**Suggestions:**")
-            for i, (suggestion, place_id) in enumerate(
-                zip(suggestions, place_ids)
-            ):
-                if st.button(
-                    f"📍 {suggestion}",
-                    key  = f"suggestion_{i}",
-                    use_container_width = True,
+            #st.caption(f"DEBUG: searching '{address_input}' in {selected_state}, key={GOOGLE_MAPS_KEY[:10]}...")
+
+            autocomplete = validate_and_autocomplete_address(
+                address_input,
+                GOOGLE_MAPS_KEY,
+                state = selected_state
+            )
+
+            #st.caption(f"DEBUG: status={autocomplete.get('status')} suggestions={len(autocomplete.get('suggestions',[]))}")
+
+            suggestions = autocomplete.get("suggestions", [])
+            place_ids   = autocomplete.get("place_ids",   [])
+
+            if suggestions:
+                st.markdown("**Suggestions:**")
+                for i, (suggestion, place_id) in enumerate(
+                    zip(suggestions, place_ids)
                 ):
-                    # Get full details for selected address
-                    details = get_place_details(place_id, GOOGLE_MAPS_KEY)
-                    if details.get("validated"):
-                        clean_address = details["formatted_address"].replace(", USA", "")
-                        st.session_state.validated_address  = clean_address
-                        st.session_state.validated_zip      = details.get("zip_code", "")
-                        st.session_state.address_validated  = True
-                        st.session_state.selected_address_display = clean_address
+                    if st.button(
+                        f"📍 {suggestion}",
+                        key = f"suggestion_{i}",
+                        use_container_width = True,
+                    ):
+                        details = get_place_details(
+                            place_id, GOOGLE_MAPS_KEY
+                        )
+                        if details.get("validated"):
+                            state_from_address = details.get("state","")
+                            clean = details["formatted_address"]\
+                                .replace(", USA","")
+                            st.session_state.validated_address        = clean
+                            st.session_state.selected_address_display = clean
+                            st.session_state.validated_zip   = details.get("zip_code","")
+                            st.session_state.address_validated = True
+                            st.rerun()
 
-                        st.rerun()
+        elif address_input and len(address_input) < 3:
+            st.caption("Keep typing — suggestions appear after 3 characters")
+        elif address_input and len(address_input) >= 3 and len(address_input) < 8:
+            st.caption("💡 Tip: Type street name for better results e.g. '608 Skygrove'")
 
-    # Show validated address confirmation
-    if st.session_state.address_validated:
-        st.success(f"✅ Validated: {st.session_state.validated_address}")
-        if st.button("✏️ Change address", key="change_address"):
-            st.session_state.address_validated  = False
-            st.session_state.validated_address  = ""
-            st.session_state.validated_zip      = ""
-            st.session_state.selected_address_display = ""
-            st.rerun()
+        if not GOOGLE_MAPS_KEY:
+            st.caption("⚠️ Add GOOGLE_MAPS_API_KEY to .env for autocomplete")
 
     # Final address to use
     address = (
@@ -718,13 +767,6 @@ with col1:
         if st.session_state.address_validated
         else address_input
     )
-
-    # Validation status indicator
-    if address and not st.session_state.address_validated:
-        if not GOOGLE_MAPS_KEY:
-            st.caption("⚠️ Add GOOGLE_MAPS_API_KEY to .env for address validation")
-        else:
-            st.caption("👆 Select a suggestion above to validate address")
 
 with col2:
     purchase_price = st.number_input(
