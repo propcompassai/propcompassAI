@@ -16,8 +16,12 @@ import plotly.express as px
 from datetime import datetime
 import pandas as pd
 import os
+import re
 from fpdf import FPDF
 import urllib.parse
+from dotenv import load_dotenv
+from pathlib import Path
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 # ── Page Configuration ────────────────────────────────────────────
 st.set_page_config(
@@ -97,6 +101,28 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Approximate geographic centers for location-biased autocomplete
+_STATE_CENTERS = {
+    "AL": "32.8067,-86.7911", "AK": "64.2008,-153.4937", "AZ": "34.0489,-111.0937",
+    "AR": "34.9697,-92.3731", "CA": "36.7783,-119.4179", "CO": "39.5501,-105.7821",
+    "CT": "41.6032,-73.0877", "DE": "38.9108,-75.5277",  "FL": "27.6648,-81.5158",
+    "GA": "32.1656,-82.9001", "HI": "19.8968,-155.5828", "ID": "44.0682,-114.7420",
+    "IL": "40.6331,-89.3985", "IN": "40.2672,-86.1349",  "IA": "41.8780,-93.0977",
+    "KS": "39.0119,-98.4842", "KY": "37.8393,-84.2700",  "LA": "30.9843,-91.9623",
+    "ME": "45.2538,-69.4455", "MD": "39.0458,-76.6413",  "MA": "42.4072,-71.3824",
+    "MI": "44.3148,-85.6024", "MN": "46.7296,-94.6859",  "MS": "32.3547,-89.3985",
+    "MO": "37.9643,-91.8318", "MT": "46.8797,-110.3626", "NE": "41.4925,-99.9018",
+    "NV": "38.8026,-116.4194","NH": "43.1939,-71.5724",  "NJ": "40.0583,-74.4057",
+    "NM": "34.5199,-105.8701","NY": "42.1657,-74.9481",  "NC": "35.7596,-79.0193",
+    "ND": "47.5515,-101.0020","OH": "40.4173,-82.9071",  "OK": "35.4676,-97.5164",
+    "OR": "43.8041,-120.5542","PA": "41.2033,-77.1945",  "RI": "41.6809,-71.5118",
+    "SC": "33.8361,-81.1637", "SD": "43.9695,-99.9018",  "TN": "35.5175,-86.5804",
+    "TX": "31.9686,-99.9018", "UT": "39.3210,-111.0937", "VT": "44.5588,-72.5778",
+    "VA": "37.4316,-78.6569", "WA": "47.7511,-120.7401", "WV": "38.5976,-80.4549",
+    "WI": "43.7844,-88.7879", "WY": "43.0760,-107.2903",
+}
+
+
 def validate_and_autocomplete_address(
     partial_address: str,
     api_key: str,
@@ -118,13 +144,13 @@ def validate_and_autocomplete_address(
     # ── Autocomplete ──────────────────────────────────────────
     autocomplete_url = "https://maps.googleapis.com/maps/api/place/autocomplete/json"
     params = {
-        "input":      partial_address,
-        "types":      "address",
-        "components": "country:us",
-        "key":        api_key,
-        "location":   "35.6490,-78.8328",  # Holly Springs NC center
-        "radius":     "80000",              # 80km radius = covers all NC
-        "strictbounds": "false",            # don't restrict, just bias
+        "input":        partial_address,
+        "types":        "address",
+        "components":   "country:us",
+        "key":          api_key,
+        "location":     _STATE_CENTERS.get(state, "39.5,-98.35"),  # state center or US center
+        "radius":       "300000",   # 300km — covers most states
+        "strictbounds": "false",    # bias, not restrict
     }
 
     try:
@@ -137,8 +163,8 @@ def validate_and_autocomplete_address(
         if data.get("status") == "OK":
             for prediction in data.get("predictions", []):
                 desc = prediction["description"]
-                # Filter by selected state
-                if state and f", {state}," not in desc and f", {state} " not in desc:
+                # Robust state filter: match ", TX " or ", TX," or ", TX\n"
+                if state and not re.search(rf',\s*{re.escape(state)}[\s,]', desc):
                     continue
                 suggestions.append(desc)
                 place_ids.append(prediction["place_id"])
@@ -645,25 +671,23 @@ with st.sidebar:
 st.markdown('<div class="section-header">🔍 Property Analysis</div>', unsafe_allow_html=True)
 
 # ── Address Autocomplete ──────────────────────────────────────────
-# ── Address Autocomplete ──────────────────────────────────────────
-GOOGLE_MAPS_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
-
-from dotenv import load_dotenv
-from pathlib import Path
-load_dotenv(Path(__file__).parent.parent / ".env")
 GOOGLE_MAPS_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 
 # Initialize session state
-if "validated_address"       not in st.session_state:
-    st.session_state.validated_address       = ""
+if "validated_address"        not in st.session_state:
+    st.session_state.validated_address        = ""
 if "selected_address_display" not in st.session_state:
     st.session_state.selected_address_display = ""
-if "address_validated"       not in st.session_state:
-    st.session_state.address_validated       = False
-if "validated_zip"           not in st.session_state:
-    st.session_state.validated_zip           = ""
-if "selected_state"          not in st.session_state:
-    st.session_state.selected_state          = "NC"
+if "address_validated"        not in st.session_state:
+    st.session_state.address_validated        = False
+if "validated_zip"            not in st.session_state:
+    st.session_state.validated_zip            = ""
+if "selected_state"           not in st.session_state:
+    st.session_state.selected_state           = "NC"
+if "ac_cache_key"             not in st.session_state:
+    st.session_state.ac_cache_key             = ""
+if "ac_cache_results"         not in st.session_state:
+    st.session_state.ac_cache_results         = {}
 
 col1, col2, col3 = st.columns([3, 2, 2])
 
@@ -712,23 +736,23 @@ with col1:
         )
 
         # ── Auto-trigger after 3+ characters ─────────────────
-    # ── Auto-trigger after 3+ characters ─────────────────
         if (address_input
                 and len(address_input) >= 3
                 and GOOGLE_MAPS_KEY):
 
-            #st.caption(f"DEBUG: searching '{address_input}' in {selected_state}, key={GOOGLE_MAPS_KEY[:10]}...")
+            # Cache results by (input, state) — avoids an API call on every rerun
+            cache_key = f"{address_input}|{selected_state}"
+            if cache_key != st.session_state.ac_cache_key:
+                st.session_state.ac_cache_results = validate_and_autocomplete_address(
+                    address_input,
+                    GOOGLE_MAPS_KEY,
+                    state=selected_state,
+                )
+                st.session_state.ac_cache_key = cache_key
 
-            autocomplete = validate_and_autocomplete_address(
-                address_input,
-                GOOGLE_MAPS_KEY,
-                state = selected_state
-            )
-
-            #st.caption(f"DEBUG: status={autocomplete.get('status')} suggestions={len(autocomplete.get('suggestions',[]))}")
-
-            suggestions = autocomplete.get("suggestions", [])
-            place_ids   = autocomplete.get("place_ids",   [])
+            autocomplete = st.session_state.ac_cache_results
+            suggestions  = autocomplete.get("suggestions", [])
+            place_ids    = autocomplete.get("place_ids",   [])
 
             if suggestions:
                 st.markdown("**Suggestions:**")
@@ -740,17 +764,13 @@ with col1:
                         key = f"suggestion_{i}",
                         use_container_width = True,
                     ):
-                        details = get_place_details(
-                            place_id, GOOGLE_MAPS_KEY
-                        )
+                        details = get_place_details(place_id, GOOGLE_MAPS_KEY)
                         if details.get("validated"):
-                            state_from_address = details.get("state","")
-                            clean = details["formatted_address"]\
-                                .replace(", USA","")
+                            clean = details["formatted_address"].replace(", USA", "")
                             st.session_state.validated_address        = clean
                             st.session_state.selected_address_display = clean
-                            st.session_state.validated_zip   = details.get("zip_code","")
-                            st.session_state.address_validated = True
+                            st.session_state.validated_zip            = details.get("zip_code", "")
+                            st.session_state.address_validated        = True
                             st.rerun()
 
         elif address_input and len(address_input) < 3:
@@ -788,9 +808,7 @@ with col3:
         format    = "%d"
     )
 
-# Extract zip code from address
-# Use validated zip or extract from address
-import re
+# Use validated zip or extract from address string
 zip_code = st.session_state.get("validated_zip") or None
 if not zip_code and address:
     zip_match = re.search(r'\b(\d{5})\b', address)
