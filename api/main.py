@@ -126,7 +126,9 @@ class AnalyzeResponse(BaseModel):
     annual_rate:      float
 
     # Expenses
-    monthly_expenses: float
+   # Expenses
+    monthly_expenses:  float
+    expense_breakdown: dict = {}
 
     # Cash Flow
     monthly_cashflow: float
