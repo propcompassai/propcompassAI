@@ -107,6 +107,13 @@ class AnalyzeRequest(BaseModel):
         description = "Include property management fees",
         example     = True
     )
+    mgmt_rate: float = Field(
+        default     = 8.0,
+        ge          = 0,
+        le          = 15,
+        description = "Property management rate % of rent",
+        example     = 8.0
+    )
 
 
 class AnalyzeResponse(BaseModel):
@@ -297,6 +304,7 @@ async def analyze_deal(request: AnalyzeRequest):
             zip_code         = request.zip_code,
             tax_annual       = request.tax_annual,
             include_mgmt     = request.include_mgmt,
+            mgmt_rate        = request.mgmt_rate,
             vacancy_rate     = request.vacancy_rate,
             maintenance_rate = request.maintenance_rate,
             insurance_rate   = request.insurance_rate,

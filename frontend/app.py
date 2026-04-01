@@ -242,6 +242,7 @@ def call_analyze_api(
     zip_code:         str,
     tax_annual:       float,
     include_mgmt:     bool,
+    mgmt_rate:        float = 8.0,
     vacancy_rate:     float = 8.33,
     maintenance_rate: float = 1.0,
     insurance_rate:   float = 0.5,
@@ -256,6 +257,7 @@ def call_analyze_api(
         "zip_code":         zip_code,
         "tax_annual":       tax_annual if tax_annual > 0 else None,
         "include_mgmt":     include_mgmt,
+        "mgmt_rate":        mgmt_rate,
         "vacancy_rate":     vacancy_rate,
         "maintenance_rate": maintenance_rate,
         "insurance_rate":   insurance_rate,
@@ -694,11 +696,21 @@ with st.sidebar:
         step      = 5,
     )
 
-    include_mgmt = st.checkbox(
-        "Include Property Management (8%)",
-        value = True,
-        help  = "Property management fees reduce cash flow but save your time"
+    mgmt_rate = st.slider(
+        "Property Management (% of rent)",
+        min_value = 0,
+        max_value = 15,
+        value     = 8,
+        step      = 1,
+        help      = "0% = self managed, 8% = standard, 12-15% = premium/vacation"
     )
+    if mgmt_rate == 0:
+        st.caption("Self managed — no management fee")
+    elif mgmt_rate <= 8:
+        st.caption(f"{mgmt_rate}% = standard property manager")
+    else:
+        st.caption(f"{mgmt_rate}% = premium property manager")
+    include_mgmt = mgmt_rate > 0
 
     st.markdown("---")
     st.markdown("### 🔧 Expense Assumptions")
@@ -941,6 +953,7 @@ if analyze_clicked:
                     zip_code          = zip_code or "",
                     tax_annual        = float(tax_annual),
                     include_mgmt      = include_mgmt,
+                    mgmt_rate         = float(mgmt_rate),
                     vacancy_rate      = float(vacancy_rate),
                     maintenance_rate  = float(maintenance_rate),
                     insurance_rate    = float(insurance_rate),
