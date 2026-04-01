@@ -75,11 +75,12 @@ def calculate_monthly_expenses(
     purchase_price:  float,
     monthly_rent:    float,
     tax_annual:      float = None,
-    insurance_rate:  float = 0.5,    # % of purchase price annually
-    vacancy_rate:    float = 8.0,    # % of rent lost to vacancy
-    maintenance_rate:float = 1.0,    # % of purchase price annually
-    mgmt_rate:       float = 8.0,    # % of rent for property mgmt
+    insurance_rate:  float = 0.5,
+    vacancy_rate:    float = 8.33,
+    maintenance_rate:float = 1.0,
+    mgmt_rate:       float = 8.0,
     include_mgmt:    bool  = True,
+    hoa_monthly:     float = 0.0,
 ) -> dict:
     """
     Calculate all monthly operating expenses.
@@ -118,15 +119,16 @@ def calculate_monthly_expenses(
         insurance_monthly +
         vacancy_monthly +
         maintenance_monthly +
-        mgmt_monthly
+        mgmt_monthly +
+        hoa_monthly
     )
-
     return {
         "tax_monthly":         round(tax_monthly, 2),
         "insurance_monthly":   round(insurance_monthly, 2),
         "vacancy_monthly":     round(vacancy_monthly, 2),
         "maintenance_monthly": round(maintenance_monthly, 2),
         "mgmt_monthly":        round(mgmt_monthly, 2),
+        "hoa_monthly":         round(hoa_monthly, 2),
         "total_expenses":      round(total_expenses, 2),
     }
 
@@ -398,6 +400,10 @@ def analyze_deal(
     zip_code:         str    = None,
     tax_annual:       float  = None,
     include_mgmt:     bool   = True,
+    vacancy_rate:     float  = 8.33,
+    maintenance_rate: float  = 1.0,
+    insurance_rate:   float  = 0.5,
+    hoa_monthly:      float  = 0.0,
 ) -> dict:
     """
     Master function — analyzes a complete real estate deal.
@@ -474,8 +480,12 @@ def analyze_deal(
     # ── Step 4: Calculate expenses ────────────────────────────────
     expenses = calculate_monthly_expenses(
         purchase_price, monthly_rent,
-        tax_annual=tax_annual,
-        include_mgmt=include_mgmt,
+        tax_annual       = tax_annual,
+        include_mgmt     = include_mgmt,
+        vacancy_rate     = vacancy_rate,
+        maintenance_rate = maintenance_rate,
+        insurance_rate   = insurance_rate,
+        hoa_monthly      = hoa_monthly,
     )
 
     # ── Step 5: Calculate cash flow ───────────────────────────────

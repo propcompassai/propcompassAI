@@ -242,6 +242,10 @@ def call_analyze_api(
     zip_code:         str,
     tax_annual:       float,
     include_mgmt:     bool,
+    vacancy_rate:     float = 8.33,
+    maintenance_rate: float = 1.0,
+    insurance_rate:   float = 0.5,
+    hoa_monthly:      float = 0.0,
 ) -> dict:
     """Call the PropCompassAI API and return results."""
     payload = {
@@ -252,6 +256,10 @@ def call_analyze_api(
         "zip_code":         zip_code,
         "tax_annual":       tax_annual if tax_annual > 0 else None,
         "include_mgmt":     include_mgmt,
+        "vacancy_rate":     vacancy_rate,
+        "maintenance_rate": maintenance_rate,
+        "insurance_rate":   insurance_rate,
+        "hoa_monthly":      hoa_monthly,
     }
     response = requests.post(
         f"{API_URL}/analyze",
@@ -692,13 +700,54 @@ with st.sidebar:
         help  = "Property management fees reduce cash flow but save your time"
     )
 
+    st.markdown("---")
+    st.markdown("### 🔧 Expense Assumptions")
+
+    vacancy_months = st.slider(
+        "Vacancy (months/year)",
+        min_value = 0.0,
+        max_value = 3.0,
+        value     = 1.0,
+        step      = 0.5,
+        help      = "How many months per year property sits vacant"
+    )
+    vacancy_rate = round((vacancy_months / 12) * 100, 2)
+    st.caption(f"= {vacancy_rate}% vacancy rate")
+
+    maintenance_rate = st.slider(
+        "Maintenance (% of price/year)",
+        min_value = 0.5,
+        max_value = 5.0,
+        value     = 1.0,
+        step      = 0.5,
+        help      = "New homes: 1%, Older homes: 2-3%, Fixer upper: 3-5%"
+    )
+
+    insurance_rate = st.slider(
+        "Insurance (% of price/year)",
+        min_value = 0.5,
+        max_value = 1.5,
+        value     = 0.5,
+        step      = 0.25,
+        help      = "Standard: 0.5%, High risk area: 1.0-1.5%"
+    )
+
+    hoa_monthly = st.number_input(
+        "HOA Monthly ($)",
+        min_value = 0,
+        max_value = 2000,
+        value     = 0,
+        step      = 25,
+        help      = "Check listing for HOA fees. Enter 0 if none."
+    )
+
     tax_annual = st.number_input(
         "Annual Property Tax ($)",
         min_value = 0,
         max_value = 50000,
         value     = 0,
         step      = 100,
-        help      = "Leave 0 to use estimated tax rate"
+        help      = "Leave 0 to use estimated tax rate (1.2% of price)"
     )
 
     st.markdown("---")
@@ -885,13 +934,17 @@ if analyze_clicked:
         with st.spinner("🤖 AI is analyzing this deal..."):
             try:
                 result = call_analyze_api(
-                    address          = address,
-                    purchase_price   = float(purchase_price),
-                    monthly_rent     = float(monthly_rent),
-                    down_payment_pct = float(down_payment),
-                    zip_code         = zip_code or "",
-                    tax_annual       = float(tax_annual),
-                    include_mgmt     = include_mgmt,
+                    address           = address,
+                    purchase_price    = float(purchase_price),
+                    monthly_rent      = float(monthly_rent),
+                    down_payment_pct  = float(down_payment),
+                    zip_code          = zip_code or "",
+                    tax_annual        = float(tax_annual),
+                    include_mgmt      = include_mgmt,
+                    vacancy_rate      = float(vacancy_rate),
+                    maintenance_rate  = float(maintenance_rate),
+                    insurance_rate    = float(insurance_rate),
+                    hoa_monthly       = float(hoa_monthly),
                 )
 
                 # ── Recommendation Banner ─────────────────────────

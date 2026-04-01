@@ -297,6 +297,10 @@ async def analyze_deal(request: AnalyzeRequest):
             zip_code         = request.zip_code,
             tax_annual       = request.tax_annual,
             include_mgmt     = request.include_mgmt,
+            vacancy_rate     = request.vacancy_rate,
+            maintenance_rate = request.maintenance_rate,
+            insurance_rate   = request.insurance_rate,
+            hoa_monthly      = request.hoa_monthly,
         )
 
         print(f"   Result: {result['recommendation']} (score: {result['deal_score']})")
