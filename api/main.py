@@ -31,6 +31,10 @@ from pydantic import BaseModel, Field
 import uvicorn
 from dotenv import load_dotenv
 from ml_engine.gemini_explainer import GeminiExplainer
+from ml_engine.realtor_advisor import RealtorAdvisor
+
+# Initialize once at startup
+realtor_advisor = RealtorAdvisor()
 
 # Initialize Gemini once at startup
 gemini_explainer = GeminiExplainer()
@@ -168,7 +172,7 @@ class AnalyzeResponse(BaseModel):
    # Expenses
     monthly_expenses:  float
     expense_breakdown: dict = {}
-
+    realtor_analysis: dict = {}
     # Cash Flow
     monthly_cashflow: float
     annual_cashflow:  float
@@ -346,6 +350,8 @@ async def analyze_deal(request: AnalyzeRequest):
 
         print(f"   Result: {result['recommendation']} (score: {result['deal_score']})")
 
+                # Add realtor analysis
+        result["realtor_analysis"] = realtor_advisor.analyze(result)
         return AnalyzeResponse(**result)
 
     except Exception as e:

@@ -747,15 +747,7 @@ with st.sidebar:
         help      = "Standard: 0.5%, High risk area: 1.0-1.5%"
     )
 
-    hoa_monthly = st.number_input(
-        "HOA Monthly ($)",
-        min_value = 0,
-        max_value = 2000,
-        value     = 0,
-        step      = 25,
-        help      = "Check listing for HOA fees. Enter 0 if none."
-    )
-
+    
 # Calculate estimated tax to show user
     # Get estimated tax from last analysis if available
     estimated_tax_annual = 0
@@ -775,6 +767,15 @@ with st.sidebar:
     )
     st.caption("NC: 1.0-1.2% | TX: 1.8-2.5% | NJ: 2.0-4.0% | NY/IL: up to 4-5%")
     tax_annual = 0  # will be calculated from rate in API
+
+    hoa_monthly = st.number_input(
+        "HOA Monthly ($)",
+        min_value = 0,
+        max_value = 2000,
+        value     = 0,
+        step      = 25,
+        help      = "Check listing for HOA fees. Enter 0 if none."
+    )
    
     st.markdown("---")
     st.markdown("### 📖 Scoring Guide")
@@ -1137,6 +1138,64 @@ if analyze_clicked:
 
                     except Exception as e:
                         st.caption("AI explanation unavailable.")
+                # ── Realtor Analysis ──────────────────────────
+                realtor = result.get("realtor_analysis", {})
+                if realtor.get("available"):
+                    st.markdown('<div class="section-header">🏠 Realtor Analysis</div>', unsafe_allow_html=True)
+
+                    diagnosis   = realtor.get("diagnosis",   {})
+                    fair_value  = realtor.get("fair_value",  {})
+                    negotiation = realtor.get("negotiation", {})
+                    scenarios   = realtor.get("scenarios",   [])
+                    summary     = realtor.get("summary",     "")
+
+                    # Summary box
+                    st.info(f"💼 {summary}")
+
+                    col_d, col_f = st.columns(2)
+
+                    with col_d:
+                        st.markdown("**🔍 Diagnosis**")
+                        severity = diagnosis.get("severity", "medium")
+                        color = {"high": "🔴", "medium": "🟡", "low": "🟢", "positive": "🟢"}.get(severity, "🟡")
+                        st.markdown(f"{color} {diagnosis.get('message', '')}")
+                        st.caption(f"Rent-to-price ratio: {diagnosis.get('rent_to_price', 0):.2f}% (target: 0.8%+)")
+
+                    with col_f:
+                        st.markdown("**💰 Fair Market Value**")
+                        st.metric("At 6% cap rate", f"${fair_value.get('value_at_6_cap', 0):,.0f}")
+                        st.metric("At 7% cap rate", f"${fair_value.get('value_at_7_cap', 0):,.0f}")
+                        st.metric("At 8% cap rate", f"${fair_value.get('value_at_8_cap', 0):,.0f}")
+
+                    # Negotiation strategy
+                    st.markdown("**🤝 Negotiation Strategy**")
+                    neg_col1, neg_col2, neg_col3 = st.columns(3)
+                    with neg_col1:
+                        st.metric("Max price for BUY",   f"${negotiation.get('max_price_for_buy', 0):,.0f}")
+                    with neg_col2:
+                        st.metric("Suggested offer",     f"${negotiation.get('suggested_offer', 0):,.0f}")
+                    with neg_col3:
+                        st.metric("Price reduction needed", f"${negotiation.get('reduction_needed', 0):,.0f}")
+
+                    # Value-add scenarios
+                    if scenarios:
+                        st.markdown("**📈 Value-Add Scenarios**")
+                        for scenario in scenarios:
+                            rec   = scenario.get("recommendation", "WATCH")
+                            color = "🟢" if rec == "BUY" else "🟡"
+                            best  = "⭐ BEST OPTION" if scenario.get("best") else ""
+                            with st.expander(f"{color} {scenario.get('name', '')} {best}"):
+                                s1, s2, s3 = st.columns(3)
+                                with s1:
+                                    st.metric("Target Price", f"${scenario.get('target_price', 0):,.0f}")
+                                with s2:
+                                    st.metric("Target Rent",  f"${scenario.get('target_rent', 0):,.0f}/mo")
+                                with s3:
+                                    cf = scenario.get('new_cashflow', 0)
+                                    st.metric("New Cash Flow", f"${cf:,.0f}/mo", delta=f"${cf:,.0f}")
+                                st.success(f"✅ Action: {scenario.get('action', '')}")
+                                st.caption(f"New cap rate: {scenario.get('new_cap_rate', 0):.2f}% | Recommendation: {rec}")
+                                
                 st.success("✅ Analysis complete! Report ready to download.")
 
             except requests.exceptions.Timeout:
