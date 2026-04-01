@@ -247,6 +247,7 @@ def call_analyze_api(
     maintenance_rate: float = 1.0,
     insurance_rate:   float = 0.5,
     hoa_monthly:      float = 0.0,
+    tax_rate:         float = 1.2,
 ) -> dict:
     """Call the PropCompassAI API and return results."""
     payload = {
@@ -256,6 +257,7 @@ def call_analyze_api(
         "down_payment_pct": down_payment_pct,
         "zip_code":         zip_code,
         "tax_annual":       tax_annual if tax_annual > 0 else None,
+        "tax_rate":         tax_rate,
         "include_mgmt":     include_mgmt,
         "mgmt_rate":        mgmt_rate,
         "vacancy_rate":     vacancy_rate,
@@ -374,6 +376,7 @@ def build_expense_breakdown_chart(result: dict) -> go.Figure:
         ("vacancy_monthly",     "Vacancy",         "#8B5CF6"),
         ("maintenance_monthly", "Maintenance",     "#16A34A"),
         ("mgmt_monthly",        "Property Mgmt",   "#2563EB"),
+        ("hoa_monthly",         "HOA",             "#EC4899"),
     ]
 
     for key, label, color in expense_map:
@@ -753,15 +756,26 @@ with st.sidebar:
         help      = "Check listing for HOA fees. Enter 0 if none."
     )
 
-    tax_annual = st.number_input(
-        "Annual Property Tax ($)",
-        min_value = 0,
-        max_value = 50000,
-        value     = 0,
-        step      = 100,
-        help      = "Leave 0 to use estimated tax rate (1.2% of price)"
-    )
+# Calculate estimated tax to show user
+    # Get estimated tax from last analysis if available
+    estimated_tax_annual = 0
+    if "last_result" in st.session_state:
+        tax_monthly = st.session_state.last_result.get(
+            "expense_breakdown", {}
+        ).get("tax_monthly", 0) or 0
+        estimated_tax_annual = int(tax_monthly * 12)
 
+    tax_rate = st.slider(
+        "Property Tax Rate (% of price/year)",
+        min_value = 0.5,
+        max_value = 5.0,
+        value     = 1.2,
+        step      = 0.1,
+        help      = "Includes property + city + school taxes. Check county website for exact rate."
+    )
+    st.caption("NC: 1.0-1.2% | TX: 1.8-2.5% | NJ: 2.0-4.0% | NY/IL: up to 4-5%")
+    tax_annual = 0  # will be calculated from rate in API
+   
     st.markdown("---")
     st.markdown("### 📖 Scoring Guide")
     st.markdown("""
@@ -951,7 +965,8 @@ if analyze_clicked:
                     monthly_rent      = float(monthly_rent),
                     down_payment_pct  = float(down_payment),
                     zip_code          = zip_code or "",
-                    tax_annual        = float(tax_annual),
+                    tax_annual        = 0,
+                    tax_rate          = float(tax_rate),
                     include_mgmt      = include_mgmt,
                     mgmt_rate         = float(mgmt_rate),
                     vacancy_rate      = float(vacancy_rate),
@@ -959,6 +974,9 @@ if analyze_clicked:
                     insurance_rate    = float(insurance_rate),
                     hoa_monthly       = float(hoa_monthly),
                 )
+
+                 # Save result to session state for sidebar tax display
+                st.session_state.last_result = result
 
                 # ── Recommendation Banner ─────────────────────────
                 st.markdown("---")

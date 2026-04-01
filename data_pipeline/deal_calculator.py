@@ -75,6 +75,7 @@ def calculate_monthly_expenses(
     purchase_price:  float,
     monthly_rent:    float,
     tax_annual:      float = None,
+    tax_rate:        float = 1.2,
     insurance_rate:  float = 0.5,
     vacancy_rate:    float = 8.33,
     maintenance_rate:float = 1.0,
@@ -99,8 +100,8 @@ def calculate_monthly_expenses(
     if tax_annual and tax_annual > 0:
         tax_monthly = tax_annual / 12
     else:
-        # Estimate: 1.2% of purchase price annually
-        tax_monthly = purchase_price * 0.012 / 12
+        # Use user-provided tax rate
+        tax_monthly = purchase_price * (tax_rate / 100) / 12
 
     # Insurance monthly
     insurance_monthly = purchase_price * (insurance_rate / 100) / 12
@@ -399,6 +400,7 @@ def analyze_deal(
     down_payment_pct: float  = 20.0,
     zip_code:         str    = None,
     tax_annual:       float  = None,
+    tax_rate:         float  = 1.2,
     include_mgmt:     bool   = True,
     mgmt_rate:        float  = 8.0,
     vacancy_rate:     float  = 8.33,
@@ -482,6 +484,7 @@ def analyze_deal(
     expenses = calculate_monthly_expenses(
         purchase_price, monthly_rent,
         tax_annual       = tax_annual,
+        tax_rate         = tax_rate,
         include_mgmt     = include_mgmt,
         mgmt_rate        = mgmt_rate,
         vacancy_rate     = vacancy_rate,
