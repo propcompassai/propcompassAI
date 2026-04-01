@@ -221,7 +221,7 @@ class RealtorAdvisor:
                 "new_cashflow": round(cashflow_b),
                 "new_cap_rate": cap_b,
                 "recommendation": "BUY" if cashflow_b >= self.MIN_CASHFLOW_BUY else "WATCH",
-                "action":      f"Renovate to justify ${target_rent_b:,.0f}/mo rent (+${rent_increase:,.0f})",
+                "action": f"Renovate to justify ${target_rent_b:,.0f}/mo (+${rent_increase:,.0f}/mo increase)",
             })
 
         # ── Scenario C: Both price + rent ─────────────────────
@@ -241,7 +241,7 @@ class RealtorAdvisor:
             "new_cashflow": round(cashflow_c),
             "new_cap_rate": cap_c,
             "recommendation": "BUY" if cashflow_c >= self.MIN_CASHFLOW_BUY else "WATCH",
-            "action":      f"Offer ${target_price_c:,.0f} + renovate for ${target_rent_c:,.0f}/mo rent",
+            "action": f"Offer ${target_price_c:,.0f} + renovate for ${target_rent_c:,.0f}/mo (+${target_rent_c - rent:,.0f}/mo increase)",
             "best":        True,
         })
 

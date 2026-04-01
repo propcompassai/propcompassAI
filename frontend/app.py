@@ -650,15 +650,171 @@ def generate_pdf_report(result: dict) -> bytes:
         pdf.cell(55, 7, f"  {format_currency(yr.get('annual_cashflow', 0) or 0)}", fill=True)
         pdf.cell(45, 7, f"  {format_currency(yr.get('total_appreciation', 0) or 0)}", fill=True)
         pdf.ln()
+# ── Realtor Analysis Section ──────────────────────────────
+    realtor = result.get("realtor_analysis", {})
+    if realtor.get("available"):
+        pdf.add_page()
+
+        # Header
+        pdf.set_fill_color(27, 58, 107)
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_font("Helvetica", "B", 14)
+        pdf.set_xy(10, 10)
+        pdf.cell(190, 10, "Realtor Investment Strategy", fill=True)
+        pdf.ln(14)
+
+        pdf.set_text_color(0, 0, 0)
+
+        # Summary
+        summary = realtor.get("summary", "")
+        if summary:
+            pdf.set_font("Helvetica", "B", 11)
+            pdf.set_fill_color(230, 241, 251)
+            pdf.cell(190, 8, "  Summary", fill=True)
+            pdf.ln(9)
+            pdf.set_font("Helvetica", "", 10)
+            pdf.multi_cell(190, 6, summary)
+            pdf.ln(4)
+
+        # Diagnosis
+        diagnosis = realtor.get("diagnosis", {})
+        if diagnosis:
+            pdf.set_font("Helvetica", "B", 11)
+            pdf.set_fill_color(230, 241, 251)
+            pdf.cell(190, 8, "  Diagnosis", fill=True)
+            pdf.ln(9)
+            pdf.set_font("Helvetica", "", 10)
+            pdf.multi_cell(190, 6, diagnosis.get("message", ""))
+            pdf.ln(2)
+            pdf.set_font("Helvetica", "", 9)
+            pdf.set_text_color(100, 100, 100)
+            pdf.cell(190, 6, f"  Rent-to-price ratio: {diagnosis.get('rent_to_price', 0):.2f}% (target: 0.8%+)")
+            pdf.ln(6)
+            pdf.set_text_color(0, 0, 0)
+
+        # Fair Market Value
+        fair = realtor.get("fair_value", {})
+        if fair:
+            pdf.set_font("Helvetica", "B", 11)
+            pdf.set_fill_color(230, 241, 251)
+            pdf.cell(190, 8, "  Fair Market Value", fill=True)
+            pdf.ln(9)
+
+            fv_rows = [
+                ("At 6% Cap Rate", f"${fair.get('value_at_6_cap', 0):,.0f}"),
+                ("At 7% Cap Rate", f"${fair.get('value_at_7_cap', 0):,.0f}"),
+                ("At 8% Cap Rate", f"${fair.get('value_at_8_cap', 0):,.0f}"),
+                ("List Price",     f"${fair.get('list_price', 0):,.0f}"),
+                ("Discount Needed",f"${fair.get('discount_needed', 0):,.0f} ({fair.get('discount_pct', 0):.1f}%)"),
+            ]
+            for i, (label, value) in enumerate(fv_rows):
+                bg = (241, 245, 249) if i % 2 == 0 else (255, 255, 255)
+                pdf.set_fill_color(*bg)
+                pdf.set_font("Helvetica", "B", 9)
+                pdf.cell(95, 7, f"  {label}", fill=True)
+                pdf.set_font("Helvetica", "", 9)
+                pdf.cell(95, 7, f"  {value}", fill=True)
+                pdf.ln()
+            pdf.ln(4)
+
+        # Negotiation Strategy
+        neg = realtor.get("negotiation", {})
+        if neg:
+            pdf.set_font("Helvetica", "B", 11)
+            pdf.set_fill_color(230, 241, 251)
+            pdf.cell(190, 8, "  Negotiation Strategy", fill=True)
+            pdf.ln(9)
+
+            neg_rows = [
+                ("Max Price for BUY",    f"${neg.get('max_price_for_buy', 0):,.0f}"),
+                ("Max Price for WATCH",  f"${neg.get('max_price_for_watch', 0):,.0f}"),
+                ("Suggested Opening Offer", f"${neg.get('suggested_offer', 0):,.0f}"),
+                ("Price Reduction Needed",  f"${neg.get('reduction_needed', 0):,.0f} ({neg.get('reduction_pct', 0):.1f}%)"),
+            ]
+            for i, (label, value) in enumerate(neg_rows):
+                bg = (241, 245, 249) if i % 2 == 0 else (255, 255, 255)
+                pdf.set_fill_color(*bg)
+                pdf.set_font("Helvetica", "B", 9)
+                pdf.cell(95, 7, f"  {label}", fill=True)
+                pdf.set_font("Helvetica", "", 9)
+                pdf.cell(95, 7, f"  {value}", fill=True)
+                pdf.ln()
+            pdf.ln(4)
+
+        # Value-Add Scenarios
+        scenarios = realtor.get("scenarios", [])
+        if scenarios:
+            pdf.set_font("Helvetica", "B", 11)
+            pdf.set_fill_color(230, 241, 251)
+            pdf.cell(190, 8, "  Value-Add Scenarios", fill=True)
+            pdf.ln(9)
+
+            for scenario in scenarios:
+                rec = scenario.get("recommendation", "WATCH")
+                best = " - RECOMMENDED" if scenario.get("best") else ""
+
+                # Scenario header
+                pdf.set_fill_color(27, 58, 107)
+                pdf.set_text_color(255, 255, 255)
+                pdf.set_font("Helvetica", "B", 9)
+                pdf.cell(190, 7, f"  {scenario.get('name', '')}{best}", fill=True)
+                pdf.ln(8)
+
+                pdf.set_text_color(0, 0, 0)
+                sc_rows = [
+                    ("Target Price",    f"${scenario.get('target_price', 0):,.0f}"),
+                    ("Target Rent",     f"${scenario.get('target_rent', 0):,.0f}/mo"),
+                    ("New Cash Flow",   f"${scenario.get('new_cashflow', 0):,.0f}/mo"),
+                    ("New Cap Rate",    f"{scenario.get('new_cap_rate', 0):.2f}%"),
+                    ("Recommendation",  rec),
+                ]
+                for i, (label, value) in enumerate(sc_rows):
+                    bg = (241, 245, 249) if i % 2 == 0 else (255, 255, 255)
+                    pdf.set_fill_color(*bg)
+                    pdf.set_font("Helvetica", "B", 9)
+                    pdf.cell(95, 6, f"  {label}", fill=True)
+                    pdf.set_font("Helvetica", "", 9)
+                    pdf.cell(95, 6, f"  {value}", fill=True)
+                    pdf.ln()
+
+                # Action
+                pdf.set_fill_color(220, 252, 231)
+                pdf.set_font("Helvetica", "I", 9)
+                pdf.set_text_color(22, 101, 52)
+                pdf.multi_cell(190, 6, f"  Action: {scenario.get('action', '')}", fill=True)
+                pdf.set_text_color(0, 0, 0)
+                pdf.ln(3)
+
+    # ── AI Explanation Section ────────────────────────────────
+    ai_explanation = result.get("ai_explanation", "")
+    if ai_explanation:
+        pdf.ln(4)
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.set_fill_color(230, 241, 251)
+        pdf.cell(190, 8, "  AI Investment Analysis (Gemini 2.5 Flash)", fill=True)
+        pdf.ln(9)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.set_fill_color(239, 246, 255)
+        pdf.multi_cell(190, 6, ai_explanation, fill=True)
+        pdf.ln(4)
 
     # Footer
     pdf.set_y(-20)
     pdf.set_font("Helvetica", "I", 8)
     pdf.set_text_color(150, 150, 150)
-    pdf.cell(190, 5, "PropCompassAI | This report is for informational purposes only. Not financial advice.", align="C")
+    pdf.set_font("Helvetica", "I", 7)
+    pdf.set_text_color(150, 150, 150)
+    pdf.set_y(-25)
+    pdf.multi_cell(190, 4,
+        "DISCLAIMER: This report is generated by PropCompassAI for informational purposes only. "
+        "It does not constitute financial, investment, or legal advice. "
+        "Consult a licensed financial advisor, CPA, or real estate attorney before making investment decisions. "
+        "PropCompassAI | PropCompassAI",
+        align="C"
+    )
 
-    # Return as bytes using dest='S'
     return bytes(pdf.output())
+
 
 # ══ MAIN UI ════════════════════════════════════════════════════════
 
@@ -1123,6 +1279,10 @@ if analyze_clicked:
                         model_used    = explain_data.get("model", "AI")
                         status        = explain_data.get("status", "")
 
+                         # Save explanation to result for PDF
+                        if explanation:
+                            result["ai_explanation"] = explanation
+                            
                         if explanation:
                             st.markdown(f"""
                             <div style='background:#EFF6FF; border-left:4px solid #2563EB;
@@ -1195,7 +1355,7 @@ if analyze_clicked:
                                     st.metric("New Cash Flow", f"${cf:,.0f}/mo", delta=f"${cf:,.0f}")
                                 st.success(f"✅ Action: {scenario.get('action', '')}")
                                 st.caption(f"New cap rate: {scenario.get('new_cap_rate', 0):.2f}% | Recommendation: {rec}")
-                                
+
                 st.success("✅ Analysis complete! Report ready to download.")
 
             except requests.exceptions.Timeout:
