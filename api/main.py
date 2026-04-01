@@ -114,8 +114,33 @@ class AnalyzeRequest(BaseModel):
         description = "Property management rate % of rent",
         example     = 8.0
     )
-
-
+    vacancy_rate: float = Field(
+        default     = 8.33,
+        ge          = 0,
+        le          = 100,
+        description = "Vacancy rate percentage",
+        example     = 8.33
+    )
+    maintenance_rate: float = Field(
+        default     = 1.0,
+        ge          = 0,
+        le          = 10,
+        description = "Maintenance rate % of purchase price/year",
+        example     = 1.0
+    )
+    insurance_rate: float = Field(
+        default     = 0.5,
+        ge          = 0,
+        le          = 5,
+        description = "Insurance rate % of purchase price/year",
+        example     = 0.5
+    )
+    hoa_monthly: float = Field(
+        default     = 0.0,
+        ge          = 0,
+        description = "Monthly HOA fees",
+        example     = 0.0
+    )
 class AnalyzeResponse(BaseModel):
     """
     Response model for /analyze endpoint.
