@@ -97,7 +97,51 @@ class GeminiExplainer:
                 "status":      "fallback",
                 "available":   False,
             }
-
+    def _sanitize_input(self, text: str) -> str:
+        """
+        Sanitize user input to prevent prompt injection attacks.
+        Removes common injection patterns before sending to Gemini.
+        """
+        if not text:
+            return ""
+        # Convert to string and limit length
+        text = str(text)[:200]
+        # Remove common prompt injection patterns
+        injection_patterns = [
+            "ignore previous instructions",
+            "ignore all instructions",
+            "disregard the above",
+            "forget everything",
+            "new instructions:",
+            "system prompt:",
+            "you are now",
+            "act as",
+            "jailbreak",
+            "dan mode",
+            "pretend you",
+            "roleplay as",
+            "override",
+            "bypass",
+            "<script>",
+            "javascript:",
+            "prompt:",
+            "###instruction",
+            "[system]",
+            "[user]",
+            "[assistant]",
+        ]
+        text_lower = text.lower()
+        for pattern in injection_patterns:
+            if pattern in text_lower:
+                # Log the attack attempt!
+                logger.warning(
+                f"SECURITY: Prompt injection detected! "
+                f"Pattern: '{pattern}' | "
+                f"Input: '{text[:50]}...'"
+            )
+                return "Property Address Provided"
+        return text.strip()
+    
     def _build_prompt(self, deal: dict) -> str:
         five_year    = deal.get("five_year", [{}])
         last_year    = five_year[-1] if five_year else {}
@@ -105,7 +149,9 @@ class GeminiExplainer:
         final_value  = last_year.get("property_value", 0) or 0
         rec = deal.get("recommendation", "WATCH").replace("PASS", "AVOID")
         return DEAL_PROMPT.format(
-            address               = deal.get("address", "this property"),
+            address = self._sanitize_input(
+                deal.get("address", "this property")
+            ),
             purchase_price        = deal.get("purchase_price",   0) or 0,
             monthly_rent          = deal.get("monthly_rent",     0) or 0,
             monthly_cashflow      = deal.get("monthly_cashflow", 0) or 0,

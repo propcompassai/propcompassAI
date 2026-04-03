@@ -14,7 +14,16 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
+def _sanitize(self, value, default=0):
+        """Ensure numeric values are within safe ranges."""
+        try:
+            val = float(value)
+            if val < 0 or val > 100_000_000:
+                return default
+            return val
+        except (TypeError, ValueError):
+            return default
+        
 class RealtorAdvisor:
     """
     Analyzes deals the way an experienced realtor would.

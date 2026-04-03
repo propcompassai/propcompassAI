@@ -25,7 +25,13 @@ import traceback
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+limiter = Limiter(key_func=get_remote_address)
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
@@ -51,6 +57,8 @@ app = FastAPI(
     docs_url    = "/docs",   # Swagger UI at /docs
     redoc_url   = "/redoc",  # ReDoc UI at /redoc
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ── CORS Middleware ───────────────────────────────────────────────
 # Allows Streamlit frontend to call this API
@@ -74,6 +82,8 @@ class AnalyzeRequest(BaseModel):
     """
     address: str = Field(
         ...,
+        min_length  = 5,
+        max_length  = 200,
         description = "Property street address",
         example     = "123 Main St, Raleigh, NC 27601"
     )
@@ -311,7 +321,9 @@ async def get_neighborhood(zip_code: str):
 
 # ── Main Analyze Endpoint ─────────────────────────────────────────
 @app.post("/analyze", response_model=AnalyzeResponse)
-async def analyze_deal(request: AnalyzeRequest):
+@limiter.limit("30/hour")
+async def analyze_deal(request: Request, body: AnalyzeRequest):
+    request = body
     """
     Main endpoint — analyzes a real estate investment deal.
 
@@ -363,7 +375,8 @@ async def analyze_deal(request: AnalyzeRequest):
         )
 
 @app.post("/explain")
-async def explain_deal(deal_result: dict):
+@limiter.limit("30/hour")
+async def explain_deal(request: Request, deal_result: dict):
     """
     Generate Gemini AI explanation for a deal analysis result.
     Powered by Google Gemini 1.5 Flash via Vertex AI.
