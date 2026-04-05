@@ -1258,27 +1258,6 @@ if analyze_clicked:
                     hide_index          = True,
                 )
 
-# ── PDF Download ──────────────────────────────────
-                st.markdown('<div class="section-header">📄 Download Report</div>', unsafe_allow_html=True)
-
-                try:
-                    pdf_bytes = generate_pdf_report(result)
-                    pdf_data  = bytes(pdf_bytes) if pdf_bytes else None
-                except Exception as pdf_err:
-                    st.error(f"PDF Error: {pdf_err}")
-                    pdf_data = None
-
-                if pdf_data:
-                    st.download_button(
-                        label               = "📥 Download PDF Investment Report",
-                        data                = pdf_data,
-                        file_name           = "PropCompassAI_Report.pdf",
-                        mime                = "application/pdf",
-                        use_container_width = True,
-                    )
-                else:
-                    st.warning("PDF unavailable — analysis data shown above.")
-
 
                 # ── Gemini AI Explanation ─────────────────────────
                 st.markdown('<div class="section-header">🤖 AI Investment Analysis</div>', unsafe_allow_html=True)
@@ -1298,7 +1277,6 @@ if analyze_clicked:
                          # Save explanation to result for PDF
                         if explanation:
                             result["ai_explanation"] = explanation
-
                         if explanation:
                             st.markdown(f"""
                             <div style='background:#EFF6FF; border-left:4px solid #2563EB;
@@ -1314,6 +1292,27 @@ if analyze_clicked:
 
                     except Exception as e:
                         st.caption("AI explanation unavailable.")
+
+                # ── PDF Download ──────────────────────────────────
+                st.markdown('<div class="section-header">📄 Download Report</div>', unsafe_allow_html=True)
+
+                try:
+                    pdf_bytes = generate_pdf_report(result)
+                    pdf_data  = bytes(pdf_bytes)
+                except Exception as pdf_err:
+                    st.error(f"PDF Error: {pdf_err}")
+                    pdf_data = None
+
+                if pdf_data:
+                    st.download_button(
+                        label               = "📥 Download PDF Investment Report",
+                        data                = pdf_data,
+                        file_name           = "PropCompassAI_Report.pdf",
+                        mime                = "application/pdf",
+                        use_container_width = True,
+                    )
+                else:
+                    st.warning("PDF unavailable — analysis data shown above.")
                 # ── Realtor Analysis ──────────────────────────
                 realtor = result.get("realtor_analysis", {})
                 if realtor.get("available"):
