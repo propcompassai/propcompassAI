@@ -1426,3 +1426,138 @@ else:
         st.code("456 Investment Ave\nRaleigh NC 27609\nPrice: $280,000\nRent: $2,200")
     with ex3:
         st.code("789 Rental Blvd\nCharlotte NC 28201\nPrice: $220,000\nRent: $1,900")
+
+    # ════════════════════════════════════════════════════════════
+# FLOATING CHATBOT
+# ════════════════════════════════════════════════════════════
+
+# Initialize chat session state
+if "chat_open"    not in st.session_state:
+    st.session_state.chat_open    = False
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+if "chat_input"   not in st.session_state:
+    st.session_state.chat_input   = ""
+
+# Floating chat button + panel
+st.markdown("""
+<style>
+.chat-fab {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #1B3A6B;
+    color: white;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Chat toggle button
+with st.sidebar:
+    st.markdown("---")
+    st.markdown("### 💬 AI Assistant")
+    chat_toggle = st.button(
+        "💬 Ask PropCompassAI" if not st.session_state.chat_open else "✕ Close Chat",
+        use_container_width=True,
+        key="chat_toggle"
+    )
+    if chat_toggle:
+        st.session_state.chat_open = not st.session_state.chat_open
+        st.rerun()
+
+    if st.session_state.chat_open:
+        st.markdown("---")
+
+        # Welcome message
+        if not st.session_state.chat_history:
+            st.markdown("""
+            <div style='background:#EFF6FF; border-radius:8px;
+            padding:10px 12px; font-size:13px; color:#1E3A5F;
+            margin-bottom:8px;'>
+            Hi! I'm your PropCompassAI assistant.
+            Ask me anything about real estate investing,
+            or questions about the current deal!
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Chat history
+        for msg in st.session_state.chat_history:
+            if msg["role"] == "user":
+                st.markdown(f"""
+                <div style='background:#F3F4F6; border-radius:8px;
+                padding:8px 12px; font-size:12px; color:#374151;
+                margin:4px 0; text-align:right;'>
+                You: {msg['content']}
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div style='background:#EFF6FF; border-radius:8px;
+                padding:8px 12px; font-size:12px; color:#1E3A5F;
+                margin:4px 0;'>
+                🤖 {msg['content']}
+                </div>
+                """, unsafe_allow_html=True)
+
+        # Input
+        user_input = st.text_input(
+            "Ask a question...",
+            key        = "chat_question",
+            label_visibility = "collapsed",
+            placeholder = "e.g. What is a good cap rate?"
+        )
+
+        col_send, col_clear = st.columns([3, 1])
+        with col_send:
+            send = st.button("Send", use_container_width=True, key="chat_send")
+        with col_clear:
+            if st.button("Clear", use_container_width=True, key="chat_clear"):
+                st.session_state.chat_history = []
+                st.rerun()
+
+        if send and user_input:
+            # Add user message
+            st.session_state.chat_history.append({
+                "role":    "user",
+                "content": user_input
+            })
+
+            # Get deal context if available
+            deal_ctx = st.session_state.get("last_result", {})
+
+            # Call chat API
+            with st.spinner("thinking..."):
+                try:
+                    chat_response = requests.post(
+                        f"{API_URL}/chat",
+                        json = {
+                            "message":      user_input,
+                            "deal_context": deal_ctx,
+                            "history":      st.session_state.chat_history[:-1],
+                        },
+                        timeout = 30,
+                    )
+                    bot_reply = chat_response.json().get(
+                        "response",
+                        "Sorry, I couldn't process that question."
+                    )
+                except Exception:
+                    bot_reply = "Sorry, chat is temporarily unavailable."
+
+            # Add bot response
+            st.session_state.chat_history.append({
+                "role":    "assistant",
+                "content": bot_reply
+            })
+            st.rerun()

@@ -369,6 +369,7 @@ async def analyze_deal(request: AnalyzeRequest):
 
 @app.post("/explain")
 async def explain_deal(deal_result: dict):
+    
     """
     Generate Gemini AI explanation for a deal analysis result.
     Powered by Google Gemini 1.5 Flash via Vertex AI.
@@ -379,6 +380,25 @@ async def explain_deal(deal_result: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/chat")
+async def chat(request: dict):
+    """
+    Gemini-powered real estate chatbot.
+    Knows the current deal context and answers questions.
+    """
+    try:
+        message     = request.get("message", "")
+        deal_context = request.get("deal_context", {})
+        history     = request.get("history", [])
+
+        if not message:
+            raise HTTPException(status_code=400, detail="Message required")
+
+        result = gemini_explainer.chat(message, deal_context, history)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
 # ── Run locally ───────────────────────────────────────────────────
 if __name__ == "__main__":
     print("=" * 55)
