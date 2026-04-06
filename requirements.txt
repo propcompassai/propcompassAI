@@ -13,3 +13,6 @@ pyarrow>=15.0.0
 db-dtypes>=1.2.0
 google-genai>=1.0.0
 slowapi>=0.1.9
+streamlit-float
+firebase-admin
+pyrebase4

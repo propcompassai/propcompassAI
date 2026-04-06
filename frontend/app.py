@@ -21,6 +21,13 @@ from fpdf import FPDF
 import urllib.parse
 from dotenv import load_dotenv
 from pathlib import Path
+from auth.firebase_auth import (
+    sign_in_with_email,
+    create_account,
+    save_user_to_bigquery,
+    get_user_usage,
+    log_analysis,
+)
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 # ── Page Configuration ────────────────────────────────────────────
@@ -30,6 +37,36 @@ st.set_page_config(
     layout         = "wide",
     initial_sidebar_state = "expanded",
 )
+
+# ── Session State Initialization ──────────────────────────────────
+if "user"            not in st.session_state:
+    st.session_state.user            = None
+if "auth_mode"       not in st.session_state:
+    st.session_state.auth_mode       = "login"
+if "show_upgrade"    not in st.session_state:
+    st.session_state.show_upgrade    = False
+if "chat_open"       not in st.session_state:
+    st.session_state.chat_open       = False
+if "chat_history"    not in st.session_state:
+    st.session_state.chat_history    = []
+if "last_chat_input" not in st.session_state:
+    st.session_state.last_chat_input = ""
+if "last_result"     not in st.session_state:
+    st.session_state.last_result     = {}
+if "validated_address" not in st.session_state:
+    st.session_state.validated_address = ""
+if "selected_address_display" not in st.session_state:
+    st.session_state.selected_address_display = ""
+if "address_validated" not in st.session_state:
+    st.session_state.address_validated = False
+if "validated_zip"   not in st.session_state:
+    st.session_state.validated_zip   = ""
+if "selected_state"  not in st.session_state:
+    st.session_state.selected_state  = "NC"
+if "estimated_tax"   not in st.session_state:
+    st.session_state.estimated_tax   = 0
+
+# ── API Configuration ─────────────────────────────────────────────
 
 # ── API Configuration ─────────────────────────────────────────────
 API_URL = os.getenv(
@@ -293,6 +330,126 @@ def recommendation_badge(rec: str) -> str:
     emoji, css, label = badges.get(rec, ("⚪", "badge-watch", rec))
     return f'<span class="{css}">{emoji} {label}</span>'
 
+def show_login_page():
+    """Show login / register page."""
+    st.markdown("""
+    <div style='text-align:center; padding:40px 0 20px'>
+        <div style='font-size:2.5rem; font-weight:bold; color:#1B3A6B;
+        font-family:Georgia;'>🧭 PropCompassAI</div>
+        <div style='font-size:1rem; color:#6B7280; margin-top:8px;'>
+        Your compass for every real estate decision
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        # Toggle login/register
+        tab_login, tab_register = st.tabs(["Sign In", "Create Account"])
+
+        with tab_login:
+            st.markdown("#### Welcome back!")
+            email    = st.text_input("Email", key="login_email",
+                                     placeholder="your@email.com")
+            password = st.text_input("Password", key="login_password",
+                                     type="password",
+                                     placeholder="Your password")
+
+            if st.button("Sign In", use_container_width=True, key="btn_login"):
+                if email and password:
+                    with st.spinner("Signing in..."):
+                        result = sign_in_with_email(email, password)
+                    if result["success"]:
+                        st.session_state.user = result
+                        save_user_to_bigquery(
+                            user_id      = result["user_id"],
+                            email        = result["email"],
+                            display_name = result.get("display_name", ""),
+                            provider     = "email",
+                        )
+                        st.success(f"Welcome back {result['display_name']}!")
+                        st.rerun()
+                    else:
+                        st.error(result["error"])
+                else:
+                    st.warning("Please enter email and password")
+
+            st.markdown("---")
+            st.markdown("""
+            <div style='text-align:center; font-size:12px; color:#9CA3AF;'>
+            Don't have an account? Click 'Create Account' tab above
+            </div>""", unsafe_allow_html=True)
+
+        with tab_register:
+            st.markdown("#### Create your free account!")
+            st.markdown("""
+            <div style='background:#F0FDF4; border-radius:8px;
+            padding:10px 14px; font-size:13px; color:#166534;
+            margin-bottom:16px;'>
+            ✅ Free plan: 3 analyses/month<br>
+            ✅ PDF reports included<br>
+            ✅ AI explanations included<br>
+            ✅ No credit card required
+            </div>""", unsafe_allow_html=True)
+
+            name     = st.text_input("Full Name", key="reg_name",
+                                     placeholder="Your name")
+            email_r  = st.text_input("Email", key="reg_email",
+                                     placeholder="your@email.com")
+            pass_r   = st.text_input("Password", key="reg_password",
+                                     type="password",
+                                     placeholder="Min 6 characters")
+            pass_r2  = st.text_input("Confirm Password", key="reg_password2",
+                                     type="password",
+                                     placeholder="Repeat password")
+
+            if st.button("Create Free Account", use_container_width=True,
+                         key="btn_register"):
+                if not all([name, email_r, pass_r, pass_r2]):
+                    st.warning("Please fill in all fields")
+                elif pass_r != pass_r2:
+                    st.error("Passwords do not match")
+                elif len(pass_r) < 6:
+                    st.error("Password must be at least 6 characters")
+                else:
+                    with st.spinner("Creating account..."):
+                        result = create_account(email_r, pass_r, name)
+                    if result["success"]:
+                        st.session_state.user = result
+                        st.success(f"Welcome to PropCompassAI, {name}!")
+                        st.rerun()
+                    else:
+                        st.error(result["error"])
+def show_usage_banner(user: dict):
+    """Show usage limit banner for free users."""
+    if "cached_usage" not in st.session_state:
+        st.session_state.cached_usage = get_user_usage(user["user_id"])
+    usage = st.session_state.cached_usage
+    tier  = usage.get("tier", "free")
+
+    if tier == "free":
+        used      = usage.get("used", 0)
+        remaining = usage.get("remaining", 3)
+        color     = "#FEF3C7" if remaining > 0 else "#FEE2E2"
+        text_col  = "#92400E" if remaining > 0 else "#991B1B"
+        msg = (f"Free plan: {used}/3 analyses used this month — "
+               f"{remaining} remaining") if remaining > 0 else \
+              "Monthly limit reached — upgrade to Pro for unlimited analyses"
+
+        st.markdown(f"""
+        <div style='background:{color}; border-radius:8px;
+        padding:8px 16px; font-size:13px; color:{text_col};
+        margin-bottom:12px; display:flex;
+        justify-content:space-between; align-items:center;'>
+        <span>{msg}</span>
+        </div>""", unsafe_allow_html=True)
+
+        if remaining == 0:
+            st.warning("Upgrade to Pro ($29/month) for unlimited analyses!")
+            if st.button("Upgrade to Pro ↗", key="upgrade_btn"):
+                st.info("Stripe billing coming soon! Email propcompass.ai@gmail.com to upgrade manually.")
+        return usage.get("can_analyze", True)
+    return True
 
 def format_currency(value: float) -> str:
     """Format number as currency."""
@@ -834,6 +991,13 @@ def generate_pdf_report(result: dict) -> bytes:
 
 # ══ MAIN UI ════════════════════════════════════════════════════════
 
+# ── Auth Gate ─────────────────────────────────────────────────────
+if not st.session_state.user:
+    show_login_page()
+    st.stop()
+
+# ── User is logged in ─────────────────────────────────────────────
+user = st.session_state.user
 # ── Header ────────────────────────────────────────────────────────
 st.markdown("""
 <div class="main-header">
@@ -844,6 +1008,28 @@ st.markdown("""
 
 # ── Sidebar ───────────────────────────────────────────────────────
 with st.sidebar:
+     # ── User Profile ──────────────────────────────────────────
+    usage = get_user_usage(user["user_id"])
+    st.markdown(f"""
+    <div style='background:#EFF6FF; border-radius:8px;
+    padding:10px 14px; margin-bottom:12px;'>
+    <div style='font-size:13px; font-weight:600;
+    color:#1B3A6B;'>👤 {user.get('display_name', 'User')}</div>
+    <div style='font-size:11px; color:#6B7280;
+    margin-top:2px;'>{user.get('email', '')}</div>
+    <div style='font-size:11px; color:#6B7280; margin-top:4px;'>
+    Plan: <b>{usage.get('tier','free').upper()}</b> |
+    {usage.get('used',0)}/{usage.get('limit',3)} analyses
+    </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if st.button("Sign Out", key="signout_btn", use_container_width=True):
+        st.session_state.user         = None
+        st.session_state.chat_history = []
+        st.session_state.last_result  = {}
+        st.rerun()
+    st.markdown("---")
     st.markdown("### 📊 Current Market")
 
     # Show live rates
@@ -970,6 +1156,15 @@ st.markdown('<div class="section-header">🔍 Property Analysis</div>', unsafe_a
 GOOGLE_MAPS_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 
 # Initialize session state
+# ── Auth Session State ────────────────────────────────────────────
+if "user"         not in st.session_state:
+    st.session_state.user         = None
+if "user"         not in st.session_state:
+    st.session_state.user         = None
+if "auth_mode"    not in st.session_state:
+    st.session_state.auth_mode    = "login"
+if "show_upgrade" not in st.session_state:
+    st.session_state.show_upgrade = False
 if "validated_address"        not in st.session_state:
     st.session_state.validated_address        = ""
 if "selected_address_display" not in st.session_state:
@@ -1150,7 +1345,12 @@ if analyze_clicked:
 
                  # Save result to session state for sidebar tax display
                 st.session_state.last_result = result
-
+                # Log analysis for usage tracking
+                log_analysis(
+                    user_id        = user["user_id"],
+                    address        = address,
+                    recommendation = result.get("recommendation", ""),
+                )
                 # ── Recommendation Banner ─────────────────────────
                 st.markdown("---")
                 rec = result["recommendation"]
@@ -1431,133 +1631,124 @@ else:
 # FLOATING CHATBOT
 # ════════════════════════════════════════════════════════════
 
-# Initialize chat session state
+# ════════════════════════════════════════════════════════════
+# FLOATING CHATBOT
+# ════════════════════════════════════════════════════════════
+from streamlit_float import *
+float_init()
+
 if "chat_open"    not in st.session_state:
     st.session_state.chat_open    = False
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
-if "chat_input"   not in st.session_state:
-    st.session_state.chat_input   = ""
+if "last_chat_input" not in st.session_state:
+    st.session_state.last_chat_input = ""
 
-# Floating chat button + panel
-st.markdown("""
-<style>
-.chat-fab {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: #1B3A6B;
-    color: white;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    z-index: 9999;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# Chat toggle button
-with st.sidebar:
-    st.markdown("---")
-    st.markdown("### 💬 AI Assistant")
-    chat_toggle = st.button(
-        "💬 Ask PropCompassAI" if not st.session_state.chat_open else "✕ Close Chat",
-        use_container_width=True,
-        key="chat_toggle"
-    )
-    if chat_toggle:
+# Floating button
+button_container = st.container()
+with button_container:
+    if st.button(
+        "💬" if not st.session_state.chat_open else "✕",
+        key  = "float_chat_btn",
+        help = "Ask PropCompassAI Assistant"
+    ):
         st.session_state.chat_open = not st.session_state.chat_open
         st.rerun()
 
-    if st.session_state.chat_open:
-        st.markdown("---")
+button_container.float(
+    "bottom: 2rem; right: 2rem; "
+    "background-color: #1B3A6B; "
+    "border-radius: 50%; "
+    "width: 52px; height: 52px; "
+    "z-index: 9999;"
+)
 
-        # Welcome message
-        if not st.session_state.chat_history:
-            st.markdown("""
-            <div style='background:#EFF6FF; border-radius:8px;
-            padding:10px 12px; font-size:13px; color:#1E3A5F;
-            margin-bottom:8px;'>
-            Hi! I'm your PropCompassAI assistant.
-            Ask me anything about real estate investing,
-            or questions about the current deal!
-            </div>
-            """, unsafe_allow_html=True)
+# Chat panel
+if st.session_state.chat_open:
+    chat_container = st.container()
+    with chat_container:
+        st.markdown("""
+        <div style='background:#1B3A6B; color:white;
+        padding:10px 16px; border-radius:12px 12px 0 0;
+        font-size:14px; font-weight:600;'>
+        🤖 PropCompassAI Assistant
+        </div>
+        """, unsafe_allow_html=True)
 
         # Chat history
-        for msg in st.session_state.chat_history:
-            if msg["role"] == "user":
-                st.markdown(f"""
-                <div style='background:#F3F4F6; border-radius:8px;
-                padding:8px 12px; font-size:12px; color:#374151;
-                margin:4px 0; text-align:right;'>
-                You: {msg['content']}
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown(f"""
-                <div style='background:#EFF6FF; border-radius:8px;
-                padding:8px 12px; font-size:12px; color:#1E3A5F;
-                margin:4px 0;'>
-                🤖 {msg['content']}
-                </div>
-                """, unsafe_allow_html=True)
+        history_box = st.container()
+        with history_box:
+            if not st.session_state.chat_history:
+                st.info("Hi! Ask me anything about real estate investing or the current deal!")
+            for msg in st.session_state.chat_history[-10:]:
+                if msg["role"] == "user":
+                    st.markdown(f"""
+                    <div style='background:#F3F4F6;border-radius:8px;
+                    padding:8px 10px;font-size:12px;color:#374151;
+                    margin:4px 0;text-align:right;'>
+                    <b>You:</b> {msg['content']}
+                    </div>""", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <div style='background:#EFF6FF;border-radius:8px;
+                    padding:8px 10px;font-size:12px;color:#1E3A5F;
+                    margin:4px 0;'>
+                    🤖 {msg['content']}
+                    </div>""", unsafe_allow_html=True)
 
         # Input
         user_input = st.text_input(
             "Ask a question...",
-            key        = "chat_question",
+            key             = "chat_question",
             label_visibility = "collapsed",
-            placeholder = "e.g. What is a good cap rate?"
+            placeholder     = "e.g. Is this a good deal?"
         )
-
         col_send, col_clear = st.columns([3, 1])
         with col_send:
-            send = st.button("Send", use_container_width=True, key="chat_send")
+            send = st.button("Send ↵", use_container_width=True, key="chat_send")
         with col_clear:
             if st.button("Clear", use_container_width=True, key="chat_clear"):
                 st.session_state.chat_history = []
                 st.rerun()
 
-        if send and user_input:
-            # Add user message
+        if send and user_input and user_input != st.session_state.get("last_chat_input", ""):
+            st.session_state.last_chat_input = user_input
             st.session_state.chat_history.append({
                 "role":    "user",
                 "content": user_input
             })
-
-            # Get deal context if available
             deal_ctx = st.session_state.get("last_result", {})
-
-            # Call chat API
             with st.spinner("thinking..."):
                 try:
-                    chat_response = requests.post(
+                    chat_resp = requests.post(
                         f"{API_URL}/chat",
-                        json = {
+                        json    = {
                             "message":      user_input,
                             "deal_context": deal_ctx,
                             "history":      st.session_state.chat_history[:-1],
                         },
                         timeout = 30,
                     )
-                    bot_reply = chat_response.json().get(
+                    bot_reply = chat_resp.json().get(
                         "response",
-                        "Sorry, I couldn't process that question."
+                        "Sorry, I couldn't process that."
                     )
-                except Exception:
-                    bot_reply = "Sorry, chat is temporarily unavailable."
+                except Exception as e:
+                    bot_reply = f"Error: {str(e)}"
 
-            # Add bot response
             st.session_state.chat_history.append({
                 "role":    "assistant",
                 "content": bot_reply
             })
             st.rerun()
+
+    chat_container.float(
+        "bottom: 5rem; right: 2rem; "
+        "width: 340px; "
+        "background: white; "
+        "border-radius: 12px; "
+        "box-shadow: 0 8px 32px rgba(0,0,0,0.18); "
+        "border: 1px solid #E2E8F0; "
+        "padding: 0; "
+        "z-index: 9998;"
+    )
