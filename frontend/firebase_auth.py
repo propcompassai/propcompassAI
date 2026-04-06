@@ -101,6 +101,33 @@ def create_account(email: str, password: str, display_name: str = "") -> dict:
             return {"success": False, "error": "Password must be at least 6 characters."}
         else:
             return {"success": False, "error": f"Registration failed: {str(e)}"}
+def get_bigquery_client():
+    """Get BigQuery client — works on local and Streamlit Cloud."""
+    try:
+        import streamlit as st
+        if hasattr(st, 'secrets') and 'gcp_service_account' in st.secrets:
+            from google.oauth2 import service_account
+            sa_info = {
+                "type":                        st.secrets["gcp_service_account"]["type"],
+                "project_id":                  st.secrets["gcp_service_account"]["project_id"],
+                "private_key_id":              st.secrets["gcp_service_account"]["private_key_id"],
+                "private_key":                 st.secrets["gcp_service_account"]["private_key"],
+                "client_email":                st.secrets["gcp_service_account"]["client_email"],
+                "client_id":                   st.secrets["gcp_service_account"]["client_id"],
+                "auth_uri":                    st.secrets["gcp_service_account"]["auth_uri"],
+                "token_uri":                   st.secrets["gcp_service_account"]["token_uri"],
+                "auth_provider_x509_cert_url": st.secrets["gcp_service_account"]["auth_provider_x509_cert_url"],
+                "client_x509_cert_url":        st.secrets["gcp_service_account"]["client_x509_cert_url"],
+                "universe_domain":             st.secrets["gcp_service_account"].get("universe_domain", "googleapis.com"),
+            }
+            credentials = service_account.Credentials.from_service_account_info(
+                sa_info,
+                scopes=["https://www.googleapis.com/auth/cloud-platform"],
+            )
+            return bigquery.Client(project="propcompassai", credentials=credentials)
+    except Exception as e:
+        logger.warning(f"Streamlit secrets BQ failed: {e}")
+    return bigquery.Client(project=os.getenv("GCP_PROJECT_ID", "propcompassai"))
 
 def save_user_to_bigquery(
     user_id:      str,
@@ -111,7 +138,7 @@ def save_user_to_bigquery(
 ):
     """Save or update user in BigQuery users table."""
     try:
-        client = bigquery.Client(project=os.getenv("GCP_PROJECT_ID", "propcompassai"))
+        client = get_bigquery_client()
         query  = f"""
             MERGE `propcompassai.prop_compass.users` T
             USING (SELECT
@@ -138,7 +165,7 @@ def save_user_to_bigquery(
 def get_user_usage(user_id: str) -> dict:
     """Get user's analysis count for current month."""
     try:
-        client = bigquery.Client(project=os.getenv("GCP_PROJECT_ID", "propcompassai"))
+        client = get_bigquery_client()
         query  = f"""
             SELECT
                 u.tier,
@@ -175,7 +202,7 @@ def get_user_usage(user_id: str) -> dict:
 def log_analysis(user_id: str, address: str, recommendation: str):
     """Log an analysis to BigQuery for usage tracking."""
     try:
-        client = bigquery.Client(project=os.getenv("GCP_PROJECT_ID", "propcompassai"))
+        client = get_bigquery_client()
         query  = f"""
             INSERT INTO `propcompassai.prop_compass.user_analyses`
             (analysis_id, user_id, address, recommendation, analyzed_at)
