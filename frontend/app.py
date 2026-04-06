@@ -21,6 +21,9 @@ from fpdf import FPDF
 import urllib.parse
 from dotenv import load_dotenv
 from pathlib import Path
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 from auth.firebase_auth import (
     sign_in_with_email,
     create_account,
