@@ -24,7 +24,7 @@ from pathlib import Path
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from auth.firebase_auth import (
+from firebase_auth import (
     sign_in_with_email,
     create_account,
     save_user_to_bigquery,
