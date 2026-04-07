@@ -127,6 +127,7 @@ def get_bigquery_client():
             return bigquery.Client(project="propcompassai", credentials=credentials)
     except Exception as e:
         logger.warning(f"Streamlit secrets BQ failed: {e}")
+        raise e
     return bigquery.Client(project=os.getenv("GCP_PROJECT_ID", "propcompassai"))
 
 def save_user_to_bigquery(
