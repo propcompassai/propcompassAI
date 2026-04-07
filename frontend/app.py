@@ -356,9 +356,20 @@ def show_login_page():
                                      placeholder="your@email.com")
             password = st.text_input("Password", key="login_password",
                                      type="password",
-                                     placeholder="Your password")
+                                     placeholder="Your password",
+                                     on_change=None)
 
-            if st.button("Sign In", use_container_width=True, key="btn_login"):
+            # Trigger login on Enter key OR button click
+            enter_pressed = (
+                password and
+                email and
+                st.session_state.get("login_password") and
+                "login_triggered" not in st.session_state
+            )
+
+            if st.button("Sign In", use_container_width=True, key="btn_login") or \
+               (password and email and st.session_state.get("last_password") != password and \
+                st.session_state.get("last_password") is not None):
                 if email and password:
                     with st.spinner("Signing in..."):
                         result = sign_in_with_email(email, password)
