@@ -352,24 +352,18 @@ def show_login_page():
 
         with tab_login:
             st.markdown("#### Welcome back!")
-            email    = st.text_input("Email", key="login_email",
-                                     placeholder="your@email.com")
-            password = st.text_input("Password", key="login_password",
-                                     type="password",
-                                     placeholder="Your password",
-                                     on_change=None)
+            with st.form("login_form"):
+                email    = st.text_input("Email",
+                                         placeholder="your@email.com")
+                password = st.text_input("Password",
+                                         type="password",
+                                         placeholder="Your password")
+                submitted = st.form_submit_button(
+                    "Sign In",
+                    use_container_width=True
+                )
 
-            # Trigger login on Enter key OR button click
-            enter_pressed = (
-                password and
-                email and
-                st.session_state.get("login_password") and
-                "login_triggered" not in st.session_state
-            )
-
-            if st.button("Sign In", use_container_width=True, key="btn_login") or \
-               (password and email and st.session_state.get("last_password") != password and \
-                st.session_state.get("last_password") is not None):
+            if submitted:
                 if email and password:
                     with st.spinner("Signing in..."):
                         result = sign_in_with_email(email, password)
@@ -406,19 +400,23 @@ def show_login_page():
             ✅ No credit card required
             </div>""", unsafe_allow_html=True)
 
-            name     = st.text_input("Full Name", key="reg_name",
-                                     placeholder="Your name")
-            email_r  = st.text_input("Email", key="reg_email",
-                                     placeholder="your@email.com")
-            pass_r   = st.text_input("Password", key="reg_password",
-                                     type="password",
-                                     placeholder="Min 6 characters")
-            pass_r2  = st.text_input("Confirm Password", key="reg_password2",
-                                     type="password",
-                                     placeholder="Repeat password")
+            with st.form("register_form"):
+                name     = st.text_input("Full Name",
+                                         placeholder="Your name")
+                email_r  = st.text_input("Email",
+                                         placeholder="your@email.com")
+                pass_r   = st.text_input("Password",
+                                         type="password",
+                                         placeholder="Min 6 characters")
+                pass_r2  = st.text_input("Confirm Password",
+                                         type="password",
+                                         placeholder="Repeat password")
+                reg_submitted = st.form_submit_button(
+                    "Create Free Account",
+                    use_container_width=True
+                )
 
-            if st.button("Create Free Account", use_container_width=True,
-                         key="btn_register"):
+            if reg_submitted:
                 if not all([name, email_r, pass_r, pass_r2]):
                     st.warning("Please fill in all fields")
                 elif pass_r != pass_r2:
