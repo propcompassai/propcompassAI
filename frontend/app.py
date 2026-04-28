@@ -1162,6 +1162,33 @@ with st.sidebar:
 
 
 # ── Main Input Form ───────────────────────────────────────────────
+# ── Page Navigation ───────────────────────────────────────────────
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "Deal Analyzer"
+
+page_col1, page_col2, page_col3 = st.columns([1, 1, 2])
+with page_col1:
+    if st.button("🔍 Deal Analyzer",
+                 use_container_width=True,
+                 type="primary" if st.session_state.current_page == "Deal Analyzer" else "secondary"):
+        st.session_state.current_page = "Deal Analyzer"
+        st.rerun()
+with page_col2:
+    if st.button("📋 Inspection AI",
+                 use_container_width=True,
+                 type="primary" if st.session_state.current_page == "Inspection AI" else "secondary"):
+        st.session_state.current_page = "Inspection AI"
+        st.rerun()
+
+st.markdown("---")
+
+# ── Route to correct page ─────────────────────────────────────────
+if st.session_state.current_page == "Inspection AI":
+    from inspection_ui import render_inspection_page
+    render_inspection_page(user=st.session_state.get("user"))
+    st.stop()
+
+# ── Main Input Form ───────────────────────────────────────────────
 st.markdown('<div class="section-header">🔍 Property Analysis</div>', unsafe_allow_html=True)
 
 # ── Address Autocomplete ──────────────────────────────────────────

@@ -16,3 +16,4 @@ slowapi>=0.1.9
 streamlit-float
 firebase-admin
 pyrebase4
+reportlab==4.1.0
