@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 GCP_PROJECT  = "propcompassai"
 GCP_LOCATION = "us-central1"
-MODEL_NAME   = "gemini-2.0-flash-001"
+MODEL_NAME   = "gemini-2.0-flash"
 
 VENDOR_CATEGORIES = {
     "Roof":        {"category": "Roofing Contractor",     "icon": "🏠"},
