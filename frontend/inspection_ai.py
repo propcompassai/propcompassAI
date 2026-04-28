@@ -94,7 +94,7 @@ Return ONLY the JSON object."""
         import base64
         pdf_b64 = base64.b64encode(pdf_content).decode()
         response = model.models.generate_content(
-            model="gemini-2.5-flash-preview-04-17",
+            model="gemini-2.0-flash",
             contents=[
                 {
                     "parts": [
@@ -210,7 +210,7 @@ Keep it practical and specific to NC real estate.
 Write in clear paragraphs — no bullet points."""
 
         response = model.models.generate_content(
-            model="gemini-2.5-flash-preview-04-17",
+            model="gemini-2.0-flash",
             contents=prompt
         )
         return response.text
