@@ -387,6 +387,32 @@ def show_login_page():
             <div style='text-align:center; font-size:12px; color:#9CA3AF;'>
             Don't have an account? Click 'Create Account' tab above
             </div>""", unsafe_allow_html=True)
+            # After the login/register tabs
+        st.markdown("---")
+        st.markdown("""
+        <div style='text-align:center;padding:12px;
+                    background:#F0FDF4;border-radius:10px;
+                    border:1px solid #86EFAC'>
+            <div style='font-size:13px;font-weight:600;
+                        color:#166534;margin-bottom:4px'>
+                🔨 Are you a Contractor or Home Service Pro?
+            </div>
+            <div style='font-size:11px;color:#555;
+                        margin-bottom:10px'>
+                Join our vendor network — get featured in
+                inspection reports and receive direct leads
+                from motivated buyers in your area!
+                <br><b>First 3 months FREE</b> for founding members.
+            </div>
+            <a href='https://docs.google.com/forms/d/e/1FAIpQLSf64e9SVdVqntrduTueeHdR0B3iDtQbpom1inL3oVya0Nnw7w/viewform' target='_blank'
+            style='background:#16A34A;color:white;
+                    padding:8px 18px;border-radius:6px;
+                    text-decoration:none;font-size:12px;
+                    font-weight:600'>
+                🚀 Join Vendor Network →
+            </a>
+        </div>
+        """, unsafe_allow_html=True)
 
         with tab_register:
             st.markdown("#### Create your free account!")
