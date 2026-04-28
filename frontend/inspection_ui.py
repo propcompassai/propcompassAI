@@ -5,6 +5,9 @@ Add this as a tab or page in frontend/app.py
 
 import streamlit as st
 import io
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'ml_engine'))
 from inspection_ai import analyze_inspection_report, generate_negotiation_strategy
 
 
