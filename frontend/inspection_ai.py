@@ -7,7 +7,8 @@ Categorizes issues, estimates costs, generates negotiation strategy
 import os
 import json
 import logging
-import google.generativeai as genai
+from urllib import response
+from google import genai
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -21,8 +22,7 @@ def get_gemini_model():
             api_key = st.secrets.get("GOOGLE_API_KEY")
         except Exception:
             pass
-    genai.configure(api_key=api_key)
-    return genai.GenerativeModel("gemini-2.5-flash-preview-04-17")
+    return genai.Client(api_key=api_key)
 
 # ── Main Analysis Function ────────────────────────────────────────────
 def analyze_inspection_report(pdf_bytes: bytes, property_address: str = "") -> dict:
@@ -89,9 +89,21 @@ Return ONLY the JSON object."""
             tmp.write(pdf_bytes)
             tmp_path = tmp.name
 
-        uploaded = genai.upload_file(tmp_path, mime_type="application/pdf")
-
-        response = model.generate_content([prompt, uploaded])
+        with open(tmp_path, 'rb') as f:
+                pdf_content = f.read()
+        import base64
+        pdf_b64 = base64.b64encode(pdf_content).decode()
+        response = model.models.generate_content(
+            model="gemini-2.5-flash-preview-04-17",
+            contents=[
+                {
+                    "parts": [
+                        {"text": prompt},
+                        {"inline_data": {"mime_type": "application/pdf", "data": pdf_b64}}
+                    ]
+                }
+            ]
+        )
 
         # Clean and parse response
         text = response.text.strip()
@@ -197,7 +209,10 @@ Write a professional negotiation strategy in plain English. Include:
 Keep it practical and specific to NC real estate.
 Write in clear paragraphs — no bullet points."""
 
-        response = model.generate_content(prompt)
+        response = model.models.generate_content(
+            model="gemini-2.5-flash-preview-04-17",
+            contents=prompt
+        )
         return response.text
 
     except Exception as e:
