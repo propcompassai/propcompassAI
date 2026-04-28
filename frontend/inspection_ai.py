@@ -1,220 +1,133 @@
 """
 PropCompassAI — Inspection Report AI
-Gemini-powered inspection PDF analyzer
-Categorizes issues, estimates costs, generates negotiation strategy
+Uses Vertex AI Gemini Vision — GCP billing
 """
 
 import os
 import json
 import logging
-from urllib import response
-from google import genai
-from typing import Optional
+import vertexai
+from vertexai.generative_models import GenerativeModel, Part
 
 logger = logging.getLogger(__name__)
 
-# ── Configure Gemini ──────────────────────────────────────────────────
-def get_gemini_model():
-    api_key = os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        try:
-            import streamlit as st
-            api_key = st.secrets.get("GOOGLE_API_KEY")
-        except Exception:
-            pass
-    return genai.Client(api_key=api_key)
+GCP_PROJECT  = "propcompassai"
+GCP_LOCATION = "us-central1"
+MODEL_NAME   = "gemini-2.0-flash-001"
 
-# ── Main Analysis Function ────────────────────────────────────────────
+VENDOR_CATEGORIES = {
+    "Roof":        {"category": "Roofing Contractor",     "icon": "🏠"},
+    "HVAC":        {"category": "HVAC Technician",        "icon": "❄️"},
+    "Plumbing":    {"category": "Plumber",                "icon": "🔧"},
+    "Electrical":  {"category": "Electrician",            "icon": "⚡"},
+    "Foundation":  {"category": "Foundation Specialist",  "icon": "🏗️"},
+    "Pest":        {"category": "Pest Control",           "icon": "🐛"},
+    "Mold":        {"category": "Mold Remediation",       "icon": "🧪"},
+    "Structural":  {"category": "Structural Engineer",    "icon": "🔩"},
+    "Drywall":     {"category": "Handyman / Painter",     "icon": "🎨"},
+    "Flooring":    {"category": "Flooring Specialist",    "icon": "🪵"},
+    "Water Heater":{"category": "Plumber",                "icon": "🔧"},
+    "Windows":     {"category": "Window Contractor",      "icon": "🪟"},
+    "Appliances":  {"category": "Appliance Repair",       "icon": "🔌"},
+    "Landscaping": {"category": "Landscaper",             "icon": "🌿"},
+    "Gutters":     {"category": "Gutter Specialist",      "icon": "🌧️"},
+    "Garage":      {"category": "Garage Door Specialist", "icon": "🚗"},
+    "General":     {"category": "Handyman",               "icon": "🔨"},
+}
+
+SAMPLE_VENDORS = {
+    "Roofing Contractor":    [{"name":"Triangle Roofing Pro","rating":4.9,"reviews":127,"phone":"919-555-0101","premium":True,"years":15}],
+    "HVAC Technician":       [{"name":"CoolAir HVAC Services","rating":4.8,"reviews":203,"phone":"919-555-0201","premium":True,"years":12}],
+    "Plumber":               [{"name":"Holly Springs Plumbing","rating":4.9,"reviews":178,"phone":"919-555-0301","premium":True,"years":20}],
+    "Electrician":           [{"name":"Triangle Electric Co","rating":4.8,"reviews":245,"phone":"919-555-0401","premium":True,"years":18}],
+    "Foundation Specialist": [{"name":"Carolina Foundation Fix","rating":4.9,"reviews":67,"phone":"919-555-0501","premium":True,"years":22}],
+    "Pest Control":          [{"name":"Triangle Pest Guard","rating":4.8,"reviews":312,"phone":"919-555-0601","premium":True,"years":16}],
+    "Mold Remediation":      [{"name":"Clean Air NC","rating":4.9,"reviews":78,"phone":"919-555-0701","premium":True,"years":11}],
+    "Handyman / Painter":    [{"name":"Fix It Fast Triangle","rating":4.7,"reviews":234,"phone":"919-555-0801","premium":True,"years":8}],
+    "Flooring Specialist":   [{"name":"Triangle Floor Pros","rating":4.8,"reviews":145,"phone":"919-555-0901","premium":True,"years":13}],
+    "Handyman":              [{"name":"Fix It Fast Triangle","rating":4.7,"reviews":234,"phone":"919-555-0801","premium":True,"years":8}],
+}
+
+def get_vendor_for_system(system: str) -> dict:
+    for key, info in VENDOR_CATEGORIES.items():
+        if key.lower() in system.lower():
+            return {"category": info["category"], "icon": info["icon"],
+                    "vendors": SAMPLE_VENDORS.get(info["category"], [])}
+    return {"category": "Handyman", "icon": "🔨", "vendors": SAMPLE_VENDORS.get("Handyman", [])}
+
+def get_gemini_model():
+    try:
+        import streamlit as st
+        from google.oauth2 import service_account
+        if hasattr(st, 'secrets') and 'gcp_service_account' in st.secrets:
+            credentials = service_account.Credentials.from_service_account_info(
+                dict(st.secrets["gcp_service_account"]),
+                scopes=["https://www.googleapis.com/auth/cloud-platform"],
+            )
+            vertexai.init(project=GCP_PROJECT, location=GCP_LOCATION, credentials=credentials)
+        else:
+            vertexai.init(project=GCP_PROJECT, location=GCP_LOCATION)
+    except Exception as e:
+        logger.error(f"Vertex AI init failed: {e}")
+        raise e
+    return GenerativeModel(MODEL_NAME)
+
 def analyze_inspection_report(pdf_bytes: bytes, property_address: str = "") -> dict:
-    """
-    Upload inspection PDF to Gemini and extract structured issue list.
-    Returns dict with critical/important/minor issues + cost estimates.
-    """
     try:
         model = get_gemini_model()
-
-        prompt = f"""You are a professional home inspector and real estate expert.
-Analyze this home inspection report for: {property_address or 'the subject property'}.
-
-Extract ALL issues mentioned in the report and categorize each one.
-
-Return ONLY a valid JSON object with this exact structure — no markdown, no explanation:
-
-{{
-  "property_address": "{property_address}",
-  "summary": "2-3 sentence overall summary of the property condition",
-  "total_issues": 0,
-  "critical_count": 0,
-  "important_count": 0,
-  "minor_count": 0,
-  "estimated_total_min": 0,
-  "estimated_total_max": 0,
-  "negotiation_recommendation": "Specific recommendation for price reduction or repair request",
-  "issues": [
-    {{
-      "category": "Critical",
-      "system": "Roof/Electrical/Plumbing/HVAC/Foundation/etc",
-      "description": "Clear description of the issue",
-      "location": "Where in the home",
-      "cost_min": 500,
-      "cost_max": 2000,
-      "priority": "Fix before closing",
-      "notes": "Why this matters"
-    }}
-  ]
-}}
-
-CATEGORIZATION RULES:
-- Critical: Safety hazards, structural issues, major system failures, water intrusion, electrical hazards, foundation issues. These MUST be fixed.
-- Important: Items needing repair soon — worn roof, aging HVAC, plumbing leaks, moisture issues, pest damage. Should be negotiated.
-- Minor: Cosmetic issues, small repairs, maintenance items under $500. Nice to fix but not urgent.
-
-COST ESTIMATION RULES:
-- Provide realistic repair cost ranges in USD
-- Base costs on current NC contractor rates
-- If multiple same-type issues exist combine them
-- Foundation issues: $3,000-$30,000
-- Roof replacement: $8,000-$20,000
-- HVAC replacement: $5,000-$12,000
-- Electrical panel: $1,500-$4,000
-- Water heater: $800-$2,000
-- Minor repairs: $100-$500 each
-
-Extract EVERY issue mentioned — do not skip anything.
+        prompt = f"""You are a professional home inspector. Analyze this inspection report for: {property_address or 'the subject property'}.
+Return ONLY valid JSON — no markdown, no explanation:
+{{"property_address":"{property_address}","summary":"2-3 sentence summary","total_issues":0,"critical_count":0,"important_count":0,"minor_count":0,"estimated_total_min":0,"estimated_total_max":0,"negotiation_recommendation":"Specific recommendation with dollar amount","issues":[{{"category":"Critical","system":"Roof","description":"Issue description","location":"Where in home","cost_min":500,"cost_max":2000,"priority":"Fix before closing","notes":"Why this matters"}}]}}
+Categories: Critical=safety/structural/major, Important=repair soon, Minor=cosmetic
+Systems: Roof, HVAC, Plumbing, Electrical, Foundation, Pest, Mold, Structural, Drywall, Flooring, Water Heater, Windows, Appliances, Landscaping, Gutters, Garage, General
+NC costs 2026: Foundation $3K-30K, Roof $8K-20K, HVAC $5K-12K, Electrical panel $1.5K-4K, Water heater $800-2K, Minor repairs $100-500
 Return ONLY the JSON object."""
-
-        # Upload PDF to Gemini
-        import tempfile
-        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-            tmp.write(pdf_bytes)
-            tmp_path = tmp.name
-
-        with open(tmp_path, 'rb') as f:
-                pdf_content = f.read()
-        import base64
-        pdf_b64 = base64.b64encode(pdf_content).decode()
-        response = model.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=[
-                {
-                    "parts": [
-                        {"text": prompt},
-                        {"inline_data": {"mime_type": "application/pdf", "data": pdf_b64}}
-                    ]
-                }
-            ]
-        )
-
-        # Clean and parse response
+        pdf_part = Part.from_data(data=pdf_bytes, mime_type="application/pdf")
+        response = model.generate_content([prompt, pdf_part])
         text = response.text.strip()
-        if text.startswith("```"):
+        if "```" in text:
             text = text.split("```")[1]
             if text.startswith("json"):
                 text = text[4:]
         text = text.strip()
-
         result = json.loads(text)
-
-        # Calculate totals
-        critical = [i for i in result.get("issues", []) if i.get("category") == "Critical"]
-        important = [i for i in result.get("issues", []) if i.get("category") == "Important"]
-        minor = [i for i in result.get("issues", []) if i.get("category") == "Minor"]
-
-        result["critical_count"]  = len(critical)
-        result["important_count"] = len(important)
-        result["minor_count"]     = len(minor)
-        result["total_issues"]    = len(result.get("issues", []))
-
-        # Recalculate cost totals
-        total_min = sum(i.get("cost_min", 0) for i in result.get("issues", []))
-        total_max = sum(i.get("cost_max", 0) for i in result.get("issues", []))
-        result["estimated_total_min"] = total_min
-        result["estimated_total_max"] = total_max
-
-        # Clean up temp file
-        os.unlink(tmp_path)
-
+        issues = result.get("issues", [])
+        result["critical_count"]      = len([i for i in issues if i.get("category") == "Critical"])
+        result["important_count"]     = len([i for i in issues if i.get("category") == "Important"])
+        result["minor_count"]         = len([i for i in issues if i.get("category") == "Minor"])
+        result["total_issues"]        = len(issues)
+        result["estimated_total_min"] = sum(i.get("cost_min", 0) for i in issues)
+        result["estimated_total_max"] = sum(i.get("cost_max", 0) for i in issues)
+        for issue in result["issues"]:
+            vm = get_vendor_for_system(issue.get("system", "General"))
+            issue["vendor_category"]      = vm["category"]
+            issue["vendor_icon"]          = vm["icon"]
+            issue["recommended_vendors"]  = vm["vendors"]
         logger.info(f"Inspection analysis complete: {result['total_issues']} issues found")
         return result
-
     except json.JSONDecodeError as e:
-        logger.error(f"JSON parse error: {e}")
-        return _error_result("Could not parse AI response. Please try again.")
+        return _error_result(f"Could not parse AI response: {e}")
     except Exception as e:
         logger.error(f"Inspection analysis failed: {e}")
         return _error_result(str(e))
 
+def _error_result(msg):
+    return {"error":msg,"summary":"","total_issues":0,"critical_count":0,"important_count":0,"minor_count":0,"estimated_total_min":0,"estimated_total_max":0,"negotiation_recommendation":"","issues":[]}
 
-def _error_result(msg: str) -> dict:
-    return {
-        "error": msg,
-        "summary": "",
-        "total_issues": 0,
-        "critical_count": 0,
-        "important_count": 0,
-        "minor_count": 0,
-        "estimated_total_min": 0,
-        "estimated_total_max": 0,
-        "negotiation_recommendation": "",
-        "issues": []
-    }
-
-
-# ── Negotiation Strategy Generator ───────────────────────────────────
-def generate_negotiation_strategy(
-    result: dict,
-    purchase_price: float,
-    property_address: str = ""
-) -> str:
-    """
-    Generate a detailed negotiation strategy based on inspection findings.
-    """
+def generate_negotiation_strategy(result: dict, purchase_price: float, property_address: str = "") -> str:
     try:
         model = get_gemini_model()
-
-        total_min = result.get("estimated_total_min", 0)
-        total_max = result.get("estimated_total_max", 0)
-        critical_count  = result.get("critical_count", 0)
-        important_count = result.get("important_count", 0)
-        minor_count     = result.get("minor_count", 0)
-
-        critical_issues  = [i for i in result.get("issues", []) if i.get("category") == "Critical"]
-        important_issues = [i for i in result.get("issues", []) if i.get("category") == "Important"]
-
-        critical_text  = "\n".join([f"- {i['description']} (${i['cost_min']:,}-${i['cost_max']:,})" for i in critical_issues])
-        important_text = "\n".join([f"- {i['description']} (${i['cost_min']:,}-${i['cost_max']:,})" for i in important_issues])
-
-        prompt = f"""You are an expert real estate negotiator in North Carolina.
-
-Property: {property_address}
-Purchase price: ${purchase_price:,.0f}
-Total repair cost estimate: ${total_min:,} - ${total_max:,}
-Critical issues ({critical_count}):
-{critical_text}
-
-Important issues ({important_count}):
-{important_text}
-
-Minor issues: {minor_count} items
-
-Write a professional negotiation strategy in plain English. Include:
-
-1. RECOMMENDED APPROACH (ask seller to fix OR price reduction OR credit)
-2. SPECIFIC DOLLAR AMOUNT to request
-3. PRIORITY ITEMS seller must fix before closing
-4. ITEMS acceptable as closing cost credit
-5. WALK AWAY trigger (if any)
-6. TALKING POINTS for your realtor to use
-
-Keep it practical and specific to NC real estate.
-Write in clear paragraphs — no bullet points."""
-
-        response = model.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt
-        )
+        critical  = [i for i in result.get("issues",[]) if i.get("category")=="Critical"]
+        important = [i for i in result.get("issues",[]) if i.get("category")=="Important"]
+        ctext = "\n".join([f"- {i['description']} ${i['cost_min']:,}-${i['cost_max']:,}" for i in critical])
+        itext = "\n".join([f"- {i['description']} ${i['cost_min']:,}-${i['cost_max']:,}" for i in important])
+        prompt = f"""NC real estate negotiation expert. Property: {property_address}. Price: ${purchase_price:,.0f}.
+Repair estimate: ${result.get('estimated_total_min',0):,}-${result.get('estimated_total_max',0):,}
+Critical ({len(critical)}): {ctext}
+Important ({len(important)}): {itext}
+Write practical NC negotiation strategy: recommended approach, exact dollar amount, priority fixes, credit items, walk-away trigger, talking points."""
+        response = model.generate_content(prompt)
         return response.text
-
     except Exception as e:
-        logger.error(f"Negotiation strategy failed: {e}")
-        return f"Could not generate negotiation strategy: {str(e)}"
+        return f"Could not generate strategy: {str(e)}"
+
