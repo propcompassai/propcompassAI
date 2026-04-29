@@ -349,6 +349,10 @@ e.ulaganathan@gmail.com"""
                 result, purchase_price, address)
             st.session_state["negotiation_strategy"] = strategy
 
+    if "negotiation_strategy" in st.session_state:
+        st.markdown("#### 📋 Full Negotiation Strategy")
+        st.markdown(st.session_state["negotiation_strategy"])
+
     st.divider()
 
     # ── Cost summary table ───────────────────────────────────────────
