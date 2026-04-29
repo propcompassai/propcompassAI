@@ -199,13 +199,39 @@ button[data-testid="signout_btn"] {
 
 /* ── Expanders ────────────────────────────────────────────── */
 .streamlit-expanderHeader {
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border-glass) !important;
+    background: rgba(16,28,52,0.9) !important;
+    border: 1px solid rgba(99,130,255,0.15) !important;
     border-radius: 10px !important;
-    color: var(--text-primary) !important;
+    color: #F0F4FF !important;
     font-weight: 600 !important;
+    font-size: 0.88rem !important;
     padding: 0.8rem 1rem !important;
     transition: all 0.2s !important;
+    display: flex !important;
+    align-items: center !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.streamlit-expanderHeader p {
+    color: #F0F4FF !important;
+    font-size: 0.88rem !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* Fix address input pink border */
+.stTextInput > div > div > input {
+    border-color: rgba(99,130,255,0.2) !important;
+    caret-color: #0D6EFD !important;
+}
+
+.stTextInput > div > div > input:focus {
+    border-color: #0D6EFD !important;
+    box-shadow: 0 0 0 2px rgba(13,110,253,0.15) !important;
 }
 
 .streamlit-expanderHeader:hover {
@@ -878,4 +904,19 @@ FLOATING_CHAT_CSS = """
     <div class='chat-bubble'>💬 How can we help? Chat now</div>
     <div class='chat-btn'>🧭</div>
 </div>
+/* Fix top white header bar */
+header[data-testid="stHeader"] {
+    background: #0B1120 !important;
+    border-bottom: 1px solid rgba(99,130,255,0.1) !important;
+}
+
+/* Fix sidebar profile card blank */
+[data-testid="stSidebar"] .element-container {
+    background: transparent !important;
+}
+
+[data-testid="stSidebar"] .stMarkdown div {
+    background: transparent !important;
+    color: #F0F4FF !important;
+}
 """
