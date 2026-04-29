@@ -896,14 +896,39 @@ FLOATING_CHAT_CSS = """
     50% { box-shadow: 0 4px 20px rgba(13,110,253,0.7), 0 0 0 8px rgba(13,110,253,0.1); }
 }
 /* Fix input text when typing */
-.stTextInput input, .stNumberInput input {
+.stTextInput input,
+.stTextInput input:focus,
+.stTextInput input:active,
+.stNumberInput input,
+.stNumberInput input:focus,
+input[type="number"],
+input[type="text"] {
+    color: #F0F4FF !important;
+    -webkit-text-fill-color: #F0F4FF !important;
+    opacity: 1 !important;
+}
+
+/* Fix all button text */
+.stButton button,
+.stButton button p,
+.stButton button span,
+.stDownloadButton button {
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+}
+
+/* Fix selectbox text */
+.stSelectbox div[data-baseweb],
+.stSelectbox input,
+.stSelectbox span {
     color: #F0F4FF !important;
     -webkit-text-fill-color: #F0F4FF !important;
 }
 
-/* Fix selectbox text */
-.stSelectbox div[data-baseweb] {
-    -webkit-text-fill-color: #F0F4FF !important;
+/* Fix file uploader text */
+.stFileUploader label,
+.stFileUploader span {
+    color: #94A3B8 !important;
 }
 
 /* Fix top white header bar */
