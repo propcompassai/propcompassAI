@@ -344,11 +344,10 @@ e.ulaganathan@gmail.com"""
     # ── Generate full strategy button ────────────────────────────────
     if st.button("📋 Generate Full Negotiation Strategy",
                  use_container_width=True):
-        if "negotiation_strategy" not in st.session_state:
-            with st.spinner("Building your negotiation strategy..."):
-                strategy = generate_negotiation_strategy(
-                    result, purchase_price, address)
-                st.session_state["negotiation_strategy"] = strategy
+        with st.spinner("Building your negotiation strategy..."):
+            strategy = generate_negotiation_strategy(
+                result, purchase_price, address)
+            st.session_state["negotiation_strategy"] = strategy
 
     st.divider()
 
