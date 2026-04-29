@@ -160,32 +160,6 @@ def _render_results(result: dict, address: str, purchase_price: float):
                     </div>
                     """, unsafe_allow_html=True)
 
-                    # ── Vendor CTA ──────────────────────────────────────
-                vendor_cat  = issue.get("vendor_category", "Contractor")
-                vendor_icon = issue.get("vendor_icon", "🔨")
-                st.markdown(f"""
-                <div style='background:#F0FDF4;border:1px solid #86EFAC;
-                            border-radius:10px;padding:12px 14px;margin-top:10px'>
-                    <div style='font-size:12px;font-weight:600;color:#166534;
-                                margin-bottom:6px'>
-                        {vendor_icon} Need a {vendor_cat}?
-                    </div>
-                    <div style='font-size:11px;color:#166534;margin-bottom:8px'>
-                        We are building our verified vendor network in NC!
-                        Be the first {vendor_cat} featured in your area.
-                    </div>
-                    <div style='font-size:10px;color:#555;margin-bottom:8px'>
-                        ⭐ $49/month · Verified badge · Direct leads<br>
-                        🎁 First 3 months FREE for founding members!
-                    </div>
-                    <a href='https://docs.google.com/forms/d/e/1FAIpQLSf64e9SVdVqntrduTueeHdR0B3iDtQbpom1inL3oVya0Nnw7w/viewform' target='_blank'
-                       style='background:#16A34A;color:white;padding:6px 12px;
-                              border-radius:6px;text-decoration:none;
-                              font-size:11px;font-weight:600'>
-                        🚀 Join as Founding Vendor →
-                    </a>
-                </div>
-                """, unsafe_allow_html=True)
 
     st.divider()
 
