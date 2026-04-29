@@ -162,7 +162,169 @@ def _render_results(result: dict, address: str, purchase_price: float):
 
 
     st.divider()
+    # ── Repair Request Email Generator ───────────────────────────────
+    st.divider()
+    st.markdown("### 📧 Repair Request Email Generator")
 
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        agent_name = st.text_input(
+            "Seller Agent Name",
+            placeholder="e.g. Chad Smith"
+        )
+    with col2:
+        closing_date = st.text_input(
+            "Closing Date",
+            placeholder="e.g. May 21, 2026"
+        )
+    with col3:
+        response_by = st.text_input(
+            "Response Needed By",
+            placeholder="e.g. May 10, 2026"
+        )
+
+    if st.button("📧 Generate Repair Request Email",
+                 use_container_width=True):
+        if not agent_name:
+            st.warning("Please enter seller agent name!")
+        else:
+            # Build critical issues list
+            critical_issues  = [i for i in issues
+                                 if i.get("category") == "Critical"]
+            important_issues = [i for i in issues
+                                 if i.get("category") == "Important"]
+
+            critical_text = ""
+            if critical_issues:
+                critical_text = "\n\nCRITICAL ITEMS — Must be addressed before closing:\n"
+                for idx, issue in enumerate(critical_issues, 1):
+                    critical_text += f"\n{idx}. {issue.get('system','')} — {issue.get('description','')}"
+                    critical_text += f"\n   Location: {issue.get('location','')}"
+
+            important_text = ""
+            if important_issues:
+                important_text = "\n\nIMPORTANT ITEMS — Please address prior to closing:\n"
+                for idx, issue in enumerate(important_issues, 1):
+                    important_text += f"\n{idx}. {issue.get('system','')} — {issue.get('description','')}"
+                    important_text += f"\n   Location: {issue.get('location','')}"
+
+            closing_line = f"our {closing_date} closing" if closing_date else "our closing date"
+            response_line = f"\n\nPlease let us know the seller's response by {response_by} so we can keep {closing_line} on track." if response_by else f"\n\nPlease let us know the seller's response at your earliest convenience so we can keep {closing_line} on track."
+
+            email_body = f"""Hi {agent_name},
+
+Hope you are doing well! We have completed the home inspection for {address or 'the property'}.
+
+Please find the full inspection report attached. We kindly request that the seller review and address the following items prior to closing:{critical_text}{important_text}
+
+Please note that minor cosmetic items are documented in the full inspection report for transparency, but we are not requesting action on those items at this time.{response_line}
+
+Thank you {agent_name}!
+
+Best regards,
+
+Ulaganathan Esakki
+NC Licensed Realtor
+732-983-7793
+e.ulaganathan@gmail.com"""
+
+            st.session_state["repair_email"] = email_body
+
+    if "repair_email" in st.session_state:
+        st.markdown("#### ✉️ Repair Request Email — Ready to Send")
+        st.info("📎 Remember to attach the full inspection PDF from your licensed inspector!")
+
+        # Display email
+        st.code(st.session_state["repair_email"], language=None)
+
+        # Copy button
+        st.markdown(f"""
+        <a href="mailto:?subject=Home Inspection Repair Request — {address}&body={st.session_state['repair_email'].replace(chr(10), '%0A').replace(' ', '%20')}"
+           target="_blank"
+           style='display:inline-block;background:linear-gradient(135deg,#0D6EFD,#1a7fff);
+                  color:white;padding:10px 24px;border-radius:100px;
+                  text-decoration:none;font-weight:700;font-size:14px;
+                  margin-top:8px;'>
+            📧 Open in Email Client →
+        </a>
+        """, unsafe_allow_html=True)
+
+        st.divider()
+
+        # ── Amendment Info Section ────────────────────────────────
+        st.markdown("### 📄 Amendment to Contract — Price Reduction")
+        st.markdown("""
+        <div style='background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);
+                    border-left:4px solid #F59E0B;border-radius:10px;padding:14px 16px;'>
+            <div style='font-weight:700;color:#F59E0B;margin-bottom:8px;'>
+                ⚠️ Compliance Notice
+            </div>
+            <div style='color:#CBD5E1;font-size:13px;line-height:1.6;'>
+                Amendment to Contract must use the official NAR/NCREC standard form.
+                Use the information below to fill in the official form manually.
+                <br><br>
+                <strong style='color:#F1F5F9;'>Do NOT use AI-generated documents as legal contracts.</strong>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("#### 📋 Amendment Details — Copy to Official Form")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            orig_price = st.number_input(
+                "Original Purchase Price ($)",
+                value=int(purchase_price),
+                step=1000
+            )
+            reduction  = st.number_input(
+                "Price Reduction Amount ($)",
+                value=0,
+                step=500,
+                help="Enter actual contractor quotes total"
+            )
+        with col2:
+            new_price = orig_price - reduction
+            st.markdown(f"""
+            <div style='background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);
+                        border-radius:10px;padding:16px;margin-top:24px;text-align:center'>
+                <div style='color:#94A3B8;font-size:12px;margin-bottom:4px;'>NEW PURCHASE PRICE</div>
+                <div style='font-size:2rem;font-weight:800;color:#10B981;
+                            font-family:Space Grotesk,sans-serif;'>
+                    ${new_price:,.0f}
+                </div>
+                <div style='color:#94A3B8;font-size:11px;margin-top:4px;'>
+                    Reduction: ${reduction:,.0f}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        if reduction > 0:
+            refused_issues = [i for i in issues
+                              if i.get("category") in ["Critical","Important"]]
+            st.markdown("#### 📝 Amendment Key Information")
+            st.markdown(f"""
+            <div style='background:rgba(16,28,52,0.8);border:1px solid rgba(99,130,255,0.2);
+                        border-radius:10px;padding:16px;font-family:monospace;font-size:13px;
+                        line-height:2;color:#CBD5E1;'>
+                <div style='color:#F5C842;font-weight:700;margin-bottom:8px;
+                            font-size:14px;letter-spacing:2px;'>
+                    ⚠️ DRAFT — FOR REFERENCE ONLY — DO NOT USE AS LEGAL DOCUMENT
+                </div>
+                <b>Property:</b> {address}<br>
+                <b>Original Purchase Price:</b> ${orig_price:,.0f}<br>
+                <b>Price Reduction:</b> ${reduction:,.0f}<br>
+                <b>New Purchase Price:</b> ${new_price:,.0f}<br>
+                <b>Reason:</b> Buyer inspection repair requests — seller agreed to price reduction in lieu of repairs<br>
+                <b>Items covered:</b> {len(refused_issues)} inspection items per attached report<br>
+                <b>All other terms</b> remain the same as original contract<br>
+                <br>
+                <div style='color:#F5C842;font-size:11px;'>
+                    Copy this information to the official NCREC Amendment to Contract form.
+                    Have both parties sign the official form. This is for reference only.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
     # ── Negotiation recommendation ───────────────────────────────────
     st.markdown("### 🤝 Negotiation Recommendation")
     rec = result.get("negotiation_recommendation", "")
