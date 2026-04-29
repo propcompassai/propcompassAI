@@ -896,14 +896,6 @@ FLOATING_CHAT_CSS = """
     0%, 100% { box-shadow: 0 4px 20px rgba(13,110,253,0.5), 0 0 0 4px rgba(13,110,253,0.15); }
     50% { box-shadow: 0 4px 20px rgba(13,110,253,0.7), 0 0 0 8px rgba(13,110,253,0.1); }
 }
-
-.chat-btn:hover { transform: scale(1.1); }
-</style>
-
-<div class='floating-chat'>
-    <div class='chat-bubble'>💬 How can we help? Chat now</div>
-    <div class='chat-btn'>🧭</div>
-</div>
 /* Fix top white header bar */
 header[data-testid="stHeader"] {
     background: #0B1120 !important;
@@ -919,4 +911,13 @@ header[data-testid="stHeader"] {
     background: transparent !important;
     color: #F0F4FF !important;
 }
+.chat-btn:hover { transform: scale(1.1); }
+<div class='floating-chat'>
+    <div class='chat-bubble'>💬 How can we help? Chat now</div>
+    <div class='chat-btn'>🧭</div>
+</div>
+
+</style>
+
+
 """
