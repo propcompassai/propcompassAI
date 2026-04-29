@@ -68,6 +68,26 @@ header[data-testid="stHeader"] {
     border-radius: 10px !important;
 }
 
+/* ── Text Brightness ─────────────────────────────────────── */
+.stApp p, .stApp div, .stApp span,
+.stApp label, .stMarkdown p,
+.stMarkdown li, .stMarkdown td {
+    color: #CBD5E1 !important;
+}
+
+.stApp h1, .stApp h2, .stApp h3,
+.stApp h4, .stMarkdown h1,
+.stMarkdown h2, .stMarkdown h3 {
+    color: #F1F5F9 !important;
+}
+
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] div,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] label {
+    color: #CBD5E1 !important;
+}
+
 /* ── Scrollbar ────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #0B1120; }
