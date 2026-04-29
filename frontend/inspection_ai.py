@@ -84,17 +84,29 @@ def analyze_inspection_report(pdf_bytes: bytes, property_address: str = "") -> d
 
     try:
         model = get_gemini_model()
-        prompt = f"""You are a professional home inspector. Analyze this inspection report for: {property_address or 'the subject property'}.
-Return ONLY valid JSON — no markdown, no explanation:
-{{"property_address":"{property_address}","summary":"2-3 sentence summary","total_issues":0,"critical_count":0,"important_count":0,"minor_count":0,"estimated_total_min":0,"estimated_total_max":0,"negotiation_recommendation":"Specific recommendation with dollar amount","issues":[{{"category":"Critical","system":"Roof","description":"Issue description","location":"Where in home","cost_min":500,"cost_max":2000,"priority":"Fix before closing","notes":"Why this matters"}}]}}
-Categories: Critical=safety/structural/major, Important=repair soon, Minor=cosmetic
-Systems: Roof, HVAC, Plumbing, Electrical, Foundation, Pest, Mold, Structural, Drywall, Flooring, Water Heater, Windows, Appliances, Landscaping, Gutters, Garage, General
-NC CONTRACTOR RATES 2026 — use EXACTLY these ranges every time:
-CRITICAL: Foundation $3K-30K, Roof replacement $8K-20K, Roof sheathing $500-2K, Electrical panel $1.5K-4K, Structural $2K-10K, Water intrusion $1K-8K
-IMPORTANT: HVAC replacement $5K-12K, HVAC repair $150-600, Water heater $800-2K, Roof repair $300-1.5K, Window replacement $300-800each, Flooring $200-800, Plumbing $200-1.5K
-MINOR: Paint/trim $100-500, Door adjustment $50-200, Drywall $100-400, Doorbell $100-300, Door stoppers $20-100, Air filter $20-50, Garage door $50-200
-CRITICAL issues MUST have higher cost estimates. Be consistent — same issue = same cost range every time.
-Return ONLY the JSON object."""
+        prompt = f"""Analyze this home inspection report for: {property_address or 'the subject property'}.
+
+        IMPORTANT RULES:
+        - Return ONLY a single valid JSON object
+        - No markdown, no code blocks, no explanation
+        - All string values must be on ONE LINE only
+        - No newlines inside string values
+        - No special characters in strings
+        - Keep descriptions under 80 characters
+
+        JSON format:
+        {{"property_address":"{property_address}","summary":"One line summary max 150 chars","total_issues":0,"critical_count":0,"important_count":0,"minor_count":0,"estimated_total_min":0,"estimated_total_max":0,"negotiation_recommendation":"Request $X credit for repairs","issues":[{{"category":"Critical","system":"Roof","description":"Short one line description max 80 chars","location":"Location in home","cost_min":500,"cost_max":2000,"priority":"Fix before closing","notes":"Short reason max 60 chars"}}]}}
+
+        Categories: Critical=safety or structural, Important=repair soon, Minor=cosmetic
+        Systems: Roof, HVAC, Plumbing, Electrical, Foundation, Pest, Mold, Structural, Drywall, Flooring, Water Heater, Windows, Appliances, Landscaping, Gutters, Garage, General
+
+        NC RATES 2026:
+        Critical: Foundation $3K-30K, Roof replacement $8K-20K, Roof sheathing $500-2K, Electrical panel $1.5K-4K, Structural $2K-10K
+        Important: HVAC $5K-12K, HVAC repair $150-600, Water heater $800-2K, Roof repair $300-1.5K, Flooring $200-800, Plumbing $200-1.5K
+        Minor: Paint/trim $100-500, Door $50-200, Drywall $100-400, Doorbell $100-300, Air filter $20-50, Garage door $50-200
+        CRITICAL issues MUST have higher cost estimates. Be consistent — same issue = same cost range every time.
+        Return ONLY the JSON object. No other text."""
+
         pdf_part = Part.from_data(data=pdf_bytes, mime_type="application/pdf")
         from vertexai.generative_models import GenerationConfig
 
