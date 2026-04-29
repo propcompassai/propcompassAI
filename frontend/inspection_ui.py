@@ -111,11 +111,14 @@ def _render_results(result: dict, address: str, purchase_price: float):
         pct = (total_max / purchase_price) * 100
         st.markdown(f"""
         <div style='background:rgba(245,158,11,0.15);border-left:4px solid #F59E0B;
-                    padding:0.8rem 1rem;border-radius:8px;margin:1rem 0;color:#F1F5F9'>
-            <strong>💡 Cost Context:</strong> Estimated repairs of
-            <strong>${total_min:,}–${total_max:,}</strong> represent
-            <strong>{pct:.1f}%</strong> of the ${purchase_price:,.0f} purchase price.
-            {'Consider requesting a price reduction or repair credit!' if pct > 1 else 'Minor repairs relative to purchase price.'}
+                    padding:0.8rem 1rem;border-radius:8px;margin:1rem 0;'>
+            <span style='color:#F1F5F9 !important;font-size:14px;'>
+            <strong style='color:#F5C842;'>💡 Cost Context:</strong> Estimated repairs of
+            <strong style='color:#F5C842;'>${total_min:,}–${total_max:,}</strong> represent
+            <strong style='color:#F5C842;'>{pct:.1f}%</strong>
+            <span style='color:#CBD5E1;'> of the ${purchase_price:,.0f} purchase price.
+            {'⚠️ Consider requesting a price reduction or repair credit!' if pct > 1 else '✅ Minor repairs relative to purchase price.'}
+            </span></span>
         </div>
         """, unsafe_allow_html=True)
 
