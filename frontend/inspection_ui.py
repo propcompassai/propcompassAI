@@ -362,7 +362,8 @@ e.ulaganathan@gmail.com"""
                     # Save to cache
                     save_address = st.session_state.get("inspection_address", address)
                     save_pdf     = st.session_state.get("inspection_pdf_bytes", b"")
-                    st.write(f"DEBUG: address={save_address} pdf_len={len(save_pdf)}")
+                    save_pdf_hash = __import__('hashlib').md5(save_pdf).hexdigest() if save_pdf else "EMPTY"
+                    st.write(f"DEBUG: address='{save_address}' pdf_len={len(save_pdf)} hash={save_pdf_hash}")
                     try:
                         from inspection_cache import save_strategy_to_cache
                         save_strategy_to_cache(save_pdf, save_address, strategy)
