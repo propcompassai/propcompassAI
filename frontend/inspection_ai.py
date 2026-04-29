@@ -119,8 +119,11 @@ Return ONLY the JSON object."""
         # Remove trailing commas
         import re
         text = re.sub(r',\s*([}\]])', r'\1', text)
-        result = json.loads(text)
-        result = json.loads(text)
+        try:
+            result = json.loads(text)
+        except json.JSONDecodeError as je:
+            logger.error(f"JSON error at position {je.pos}: {text[max(0,je.pos-100):je.pos+100]}")
+            return _error_result(f"Could not parse AI response: {je}")
         issues = result.get("issues", [])
         result["critical_count"]      = len([i for i in issues if i.get("category") == "Critical"])
         result["important_count"]     = len([i for i in issues if i.get("category") == "Important"])
