@@ -125,9 +125,9 @@ def _render_results(result: dict, address: str, purchase_price: float):
     issues = result.get("issues", [])
 
     for category, emoji, color in [
-        ("Critical",  "🔴", "#FEE2E2"),
-        ("Important", "🟡", "#FEF3C7"),
-        ("Minor",     "🟢", "#DCFCE7"),
+        ("Critical",  "🔴", "#F13A30"),
+        ("Important", "🟡", "#F59E0B"),
+        ("Minor",     "🟢", "#10B981"),
     ]:
         cat_issues = [i for i in issues if i.get("category") == category]
         if not cat_issues:
