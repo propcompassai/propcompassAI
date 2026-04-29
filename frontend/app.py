@@ -32,7 +32,9 @@ from firebase_auth import (
     log_analysis,
 )
 load_dotenv(Path(__file__).parent.parent / ".env")
-
+from dark_theme import DARK_THEME_CSS, FLOATING_CHAT_CSS
+st.markdown(DARK_THEME_CSS, unsafe_allow_html=True)
+st.markdown(FLOATING_CHAT_CSS, unsafe_allow_html=True)
 # ── Page Configuration ────────────────────────────────────────────
 st.set_page_config(
     page_title     = "PropCompassAI",
