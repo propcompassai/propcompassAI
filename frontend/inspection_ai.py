@@ -179,6 +179,7 @@ Repair estimate: ${result.get('estimated_total_min',0):,}-${result.get('estimate
 Critical ({len(critical)}): {ctext}
 Important ({len(important)}): {itext}
 Write practical NC negotiation strategy: recommended approach, exact dollar amount, priority fixes, credit items, walk-away trigger, talking points."""
+        from vertexai.generative_models import GenerationConfig
         response = model.generate_content(
             prompt,
             generation_config=GenerationConfig(
