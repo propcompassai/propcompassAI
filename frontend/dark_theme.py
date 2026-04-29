@@ -209,18 +209,17 @@ button[data-testid="signout_btn"] {
     transition: all 0.2s !important;
     display: flex !important;
     align-items: center !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
 }
 
 .streamlit-expanderHeader p {
     color: #F0F4FF !important;
     font-size: 0.88rem !important;
     margin: 0 !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
+}
+
+.streamlit-expanderHeader svg {
+    color: #64748B !important;
+    flex-shrink: 0 !important;
 }
 
 /* Fix address input pink border */
@@ -896,6 +895,17 @@ FLOATING_CHAT_CSS = """
     0%, 100% { box-shadow: 0 4px 20px rgba(13,110,253,0.5), 0 0 0 4px rgba(13,110,253,0.15); }
     50% { box-shadow: 0 4px 20px rgba(13,110,253,0.7), 0 0 0 8px rgba(13,110,253,0.1); }
 }
+/* Fix input text when typing */
+.stTextInput input, .stNumberInput input {
+    color: #F0F4FF !important;
+    -webkit-text-fill-color: #F0F4FF !important;
+}
+
+/* Fix selectbox text */
+.stSelectbox div[data-baseweb] {
+    -webkit-text-fill-color: #F0F4FF !important;
+}
+
 /* Fix top white header bar */
 header[data-testid="stHeader"] {
     background: #0B1120 !important;
