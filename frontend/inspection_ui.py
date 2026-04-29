@@ -62,6 +62,7 @@ def render_inspection_page(user: dict = None):
     ):
         with st.spinner("Gemini AI is reading your inspection report... this may take 30-60 seconds"):
             pdf_bytes = uploaded_file.read()
+            st.session_state["inspection_pdf_bytes"] = pdf_bytes
             result = analyze_inspection_report(pdf_bytes, property_address)
 
         if result.get("error"):
@@ -342,12 +343,28 @@ e.ulaganathan@gmail.com"""
         st.success(rec)
 
     # ── Generate full strategy button ────────────────────────────────
-    if st.button("📋 Generate Full Negotiation Strategy",
+    if st.button("�� Generate Full Negotiation Strategy",
                  use_container_width=True):
-        with st.spinner("Building your negotiation strategy..."):
-            strategy = generate_negotiation_strategy(
-                result, purchase_price, address)
-            st.session_state["negotiation_strategy"] = strategy
+        # Check cache first
+        try:
+            from inspection_cache import get_cached_strategy, save_strategy_to_cache
+            pdf_bytes = st.session_state.get("inspection_pdf_bytes", b"")
+            cached_strategy = get_cached_strategy(pdf_bytes, address)
+            if cached_strategy:
+                st.session_state["negotiation_strategy"] = cached_strategy
+                st.success("⚡ Loaded from cache instantly!")
+            else:
+                with st.spinner("Building your negotiation strategy..."):
+                    strategy = generate_negotiation_strategy(
+                        result, purchase_price, address)
+                    st.session_state["negotiation_strategy"] = strategy
+                    # Save to cache
+                    save_strategy_to_cache(pdf_bytes, address, strategy)
+        except Exception as e:
+            with st.spinner("Building your negotiation strategy..."):
+                strategy = generate_negotiation_strategy(
+                    result, purchase_price, address)
+                st.session_state["negotiation_strategy"] = strategy
 
     if "negotiation_strategy" in st.session_state:
         st.markdown("#### 📋 Full Negotiation Strategy")

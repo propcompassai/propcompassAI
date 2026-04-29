@@ -95,3 +95,51 @@ def save_to_cache(pdf_bytes: bytes, property_address: str,
 
     except Exception as e:
         logger.error(f"Cache save failed: {e}")
+
+
+def get_cached_strategy(pdf_bytes: bytes, property_address: str) -> str:
+    """Get cached negotiation strategy from BigQuery."""
+    try:
+        client = get_bigquery_client()
+        if not client:
+            return None
+        pdf_hash = get_pdf_hash(pdf_bytes)
+        address_clean = property_address.strip().lower()
+        query = f"""
+            SELECT negotiation_strategy
+            FROM `propcompassai.prop_compass.inspection_cache`
+            WHERE (pdf_hash = '{pdf_hash}'
+               OR LOWER(property_address) = '{address_clean}')
+            AND negotiation_strategy IS NOT NULL
+            ORDER BY analyzed_at DESC
+            LIMIT 1
+        """
+        rows = list(client.query(query).result())
+        if rows and rows[0].negotiation_strategy:
+            logger.info(f"Strategy cache HIT for {property_address}")
+            return rows[0].negotiation_strategy
+        return None
+    except Exception as e:
+        logger.error(f"Strategy cache lookup failed: {e}")
+        return None
+
+
+def save_strategy_to_cache(pdf_bytes: bytes, property_address: str,
+                            strategy: str):
+    """Save negotiation strategy to existing cache row."""
+    try:
+        client = get_bigquery_client()
+        if not client:
+            return
+        pdf_hash = get_pdf_hash(pdf_bytes)
+        address_clean = property_address.strip().lower()
+        query = f"""
+            UPDATE `propcompassai.prop_compass.inspection_cache`
+            SET negotiation_strategy = '{strategy.replace("'", "''")}'
+            WHERE pdf_hash = '{pdf_hash}'
+               OR LOWER(property_address) = '{address_clean}'
+        """
+        client.query(query).result()
+        logger.info(f"Strategy saved to cache for {property_address}")
+    except Exception as e:
+        logger.error(f"Strategy cache save failed: {e}")
