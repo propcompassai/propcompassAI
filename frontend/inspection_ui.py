@@ -163,7 +163,6 @@ def _render_results(result: dict, address: str, purchase_price: float):
 
     st.divider()
     # ── Repair Request Email Generator ───────────────────────────────
-    st.divider()
     st.markdown("### 📧 Repair Request Email Generator")
 
     col1, col2, col3 = st.columns(3)
