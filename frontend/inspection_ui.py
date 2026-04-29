@@ -361,8 +361,14 @@ e.ulaganathan@gmail.com"""
                     st.session_state["negotiation_strategy"] = strategy
                     # Save to cache
                     save_address = st.session_state.get("inspection_address", address)
-                    save_pdf     = st.session_state.get("inspection_pdf_bytes", pdf_bytes)
-                    save_strategy_to_cache(save_pdf, save_address, strategy)
+                    save_pdf     = st.session_state.get("inspection_pdf_bytes", b"")
+                    st.write(f"DEBUG: address={save_address} pdf_len={len(save_pdf)}")
+                    try:
+                        from inspection_cache import save_strategy_to_cache
+                        save_strategy_to_cache(save_pdf, save_address, strategy)
+                        st.success("Strategy cached!")
+                    except Exception as e:
+                        st.error(f"Cache error: {e}")
         except Exception as e:
             with st.spinner("Building your negotiation strategy..."):
                 strategy = generate_negotiation_strategy(
