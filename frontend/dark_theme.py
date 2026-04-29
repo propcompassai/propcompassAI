@@ -88,6 +88,23 @@ header[data-testid="stHeader"] {
     color: #CBD5E1 !important;
 }
 
+/* ── Sidebar Profile Text ────────────────────────────────── */
+[data-testid="stSidebar"] .stMarkdown p,
+[data-testid="stSidebar"] .stMarkdown div,
+[data-testid="stSidebar"] .element-container p,
+[data-testid="stSidebar"] .element-container div,
+[data-testid="stSidebar"] small,
+[data-testid="stSidebar"] .stCaption p {
+    color: #94A3B8 !important;
+    opacity: 1 !important;
+}
+
+/* Make name/email/plan brighter */
+[data-testid="stSidebar"] .stMarkdown strong,
+[data-testid="stSidebar"] b {
+    color: #F1F5F9 !important;
+}
+
 /* ── Scrollbar ────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #0B1120; }
