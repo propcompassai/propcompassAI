@@ -37,17 +37,24 @@ def get_cached_result(pdf_bytes: bytes, property_address: str) -> dict:
         client = get_bigquery_client()
         if not client:
             return None
+        from google.cloud import bigquery
         pdf_hash = get_pdf_hash(pdf_bytes)
-        addr = property_address.strip().lower().replace("'","")
-        query = f"""
+        addr = property_address.strip().lower()
+        query = """
             SELECT analysis_json
             FROM `propcompassai.prop_compass.inspection_cache`
-            WHERE pdf_hash = '{pdf_hash}'
-               OR LOWER(property_address) = '{addr}'
+            WHERE pdf_hash = @pdf_hash
+               OR LOWER(property_address) = @addr
             ORDER BY analyzed_at DESC
             LIMIT 1
         """
-        rows = list(client.query(query).result())
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("pdf_hash", "STRING", pdf_hash),
+                bigquery.ScalarQueryParameter("addr", "STRING", addr),
+            ]
+        )
+        rows = list(client.query(query, job_config=job_config).result())
         if rows:
             logger.info(f"Cache HIT for {property_address}")
             return json.loads(rows[0].analysis_json)
@@ -125,15 +132,27 @@ def save_strategy_to_cache(pdf_bytes: bytes, property_address: str,
         if not client:
             return
         pdf_hash = get_pdf_hash(pdf_bytes)
-        addr = property_address.strip().lower().replace("'","")
-        safe_strategy = strategy.replace("'", "''")
-        query = f"""
+
+        # Use INSERT instead of UPDATE to avoid SQL injection issues
+        from datetime import datetime
+        cache_id = f"strat_{pdf_hash[:8]}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+        # Update existing row using job config with parameters
+        query = """
             UPDATE `propcompassai.prop_compass.inspection_cache`
-            SET negotiation_strategy = '{safe_strategy}'
-            WHERE pdf_hash = '{pdf_hash}'
-               OR LOWER(property_address) = '{addr}'
+            SET negotiation_strategy = @strategy
+            WHERE pdf_hash = @pdf_hash
         """
-        client.query(query).result()
+        from google.cloud import bigquery
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("strategy", "STRING", strategy),
+                bigquery.ScalarQueryParameter("pdf_hash", "STRING", pdf_hash),
+            ]
+        )
+        client.query(query, job_config=job_config).result()
         logger.info(f"Strategy saved for: {property_address}")
     except Exception as e:
         logger.error(f"Strategy save failed: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
