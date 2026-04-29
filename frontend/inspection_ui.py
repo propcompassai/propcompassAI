@@ -110,8 +110,8 @@ def _render_results(result: dict, address: str, purchase_price: float):
     if total_max > 0:
         pct = (total_max / purchase_price) * 100
         st.markdown(f"""
-        <div style='background:#FEF3C7;border-left:4px solid #D97706;
-                    padding:0.8rem 1rem;border-radius:8px;margin:1rem 0'>
+        <div style='background:rgba(245,158,11,0.15);border-left:4px solid #F59E0B;
+                    padding:0.8rem 1rem;border-radius:8px;margin:1rem 0;color:#F1F5F9'>
             <strong>💡 Cost Context:</strong> Estimated repairs of
             <strong>${total_min:,}–${total_max:,}</strong> represent
             <strong>{pct:.1f}%</strong> of the ${purchase_price:,.0f} purchase price.
@@ -153,9 +153,9 @@ def _render_results(result: dict, address: str, purchase_price: float):
                         <div style='font-size:1.2rem;font-weight:700;color:{color}'>
                             ${issue.get('cost_min',0):,}–${issue.get('cost_max',0):,}
                         </div>
-                        <div style='font-size:0.8rem;color:#94A3B8'>Estimated repair cost</div>
+                        <div style='font-size:0.8rem;color:#CBD5E1'>Estimated repair cost</div>
                         <div style='font-size:0.75rem;margin-top:0.3rem;font-weight:500'>
-                            <span style='color:#94A3B8'>{issue.get('priority','Repair recommended')}</span>
+                            <span style='color:#CBD5E1'>{issue.get('priority','Repair recommended')}</span>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
