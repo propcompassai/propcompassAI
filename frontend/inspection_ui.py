@@ -62,7 +62,8 @@ def render_inspection_page(user: dict = None):
     ):
         with st.spinner("Gemini AI is reading your inspection report... this may take 30-60 seconds"):
             pdf_bytes = uploaded_file.read()
-            st.session_state["inspection_pdf_bytes"] = pdf_bytes
+            st.session_state["inspection_pdf_bytes"]  = pdf_bytes
+            st.session_state["inspection_address"]    = property_address
             result = analyze_inspection_report(pdf_bytes, property_address)
 
         if result.get("error"):
@@ -359,7 +360,9 @@ e.ulaganathan@gmail.com"""
                         result, purchase_price, address)
                     st.session_state["negotiation_strategy"] = strategy
                     # Save to cache
-                    save_strategy_to_cache(pdf_bytes, address, strategy)
+                    save_address = st.session_state.get("inspection_address", address)
+                    save_pdf     = st.session_state.get("inspection_pdf_bytes", pdf_bytes)
+                    save_strategy_to_cache(save_pdf, save_address, strategy)
         except Exception as e:
             with st.spinner("Building your negotiation strategy..."):
                 strategy = generate_negotiation_strategy(
