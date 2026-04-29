@@ -83,7 +83,15 @@ Systems: Roof, HVAC, Plumbing, Electrical, Foundation, Pest, Mold, Structural, D
 NC costs 2026: Foundation $3K-30K, Roof $8K-20K, HVAC $5K-12K, Electrical panel $1.5K-4K, Water heater $800-2K, Minor repairs $100-500
 Return ONLY the JSON object."""
         pdf_part = Part.from_data(data=pdf_bytes, mime_type="application/pdf")
-        response = model.generate_content([prompt, pdf_part])
+        from vertexai.generative_models import GenerationConfig
+
+        response = model.generate_content(
+            [prompt, pdf_part],
+            generation_config=GenerationConfig(
+                temperature=0.1,
+                max_output_tokens=8192,
+            )
+        )
         text = response.text.strip()
         if "```" in text:
             text = text.split("```")[1]
