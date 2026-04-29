@@ -111,6 +111,15 @@ Return ONLY the JSON object."""
             if text.startswith("json"):
                 text = text[4:]
         text = text.strip()
+        # Find JSON boundaries
+        start = text.find('{')
+        end   = text.rfind('}')
+        if start != -1 and end != -1:
+            text = text[start:end+1]
+        # Remove trailing commas
+        import re
+        text = re.sub(r',\s*([}\]])', r'\1', text)
+        result = json.loads(text)
         result = json.loads(text)
         issues = result.get("issues", [])
         result["critical_count"]      = len([i for i in issues if i.get("category") == "Critical"])
