@@ -149,13 +149,13 @@ def _render_results(result: dict, address: str, purchase_price: float):
                         st.markdown(f"**Why it matters:** {issue.get('notes','')}")
                 with col2:
                     st.markdown(f"""
-                    <div style='background:{color};padding:0.8rem;border-radius:8px;text-align:center'>
-                        <div style='font-size:1.2rem;font-weight:600'>
+                    <div style='background:rgba(13,22,45,0.8);border:2px solid {color};padding:0.8rem;border-radius:8px;text-align:center'>
+                        <div style='font-size:1.2rem;font-weight:700;color:{color}'>
                             ${issue.get('cost_min',0):,}–${issue.get('cost_max',0):,}
                         </div>
-                        <div style='font-size:0.8rem;color:#555'>Estimated repair cost</div>
+                        <div style='font-size:0.8rem;color:#94A3B8'>Estimated repair cost</div>
                         <div style='font-size:0.75rem;margin-top:0.3rem;font-weight:500'>
-                            {issue.get('priority','Repair recommended')}
+                            <span style='color:#94A3B8'>{issue.get('priority','Repair recommended')}</span>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
