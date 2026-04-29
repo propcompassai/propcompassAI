@@ -95,7 +95,7 @@ def analyze_inspection_report(pdf_bytes: bytes, property_address: str = "") -> d
         - Keep descriptions under 80 characters
 
         JSON format:
-        {{"property_address":"{property_address}","summary":"One line summary max 150 chars","total_issues":0,"critical_count":0,"important_count":0,"minor_count":0,"estimated_total_min":0,"estimated_total_max":0,"negotiation_recommendation":"Request $X credit for repairs","issues":[{{"category":"Critical","system":"Roof","description":"Short one line description max 80 chars","location":"Location in home","cost_min":500,"cost_max":2000,"priority":"Fix before closing","notes":"Short reason max 60 chars"}}]}}
+        {{"property_address":"{property_address}","summary":"One line summary max 150 chars","total_issues":0,"critical_count":0,"important_count":0,"minor_count":0,"estimated_total_min":0,"estimated_total_max":0,"negotiation_recommendation":"Describe which items seller should fix without mentioning dollar amounts","issues":[{{"category":"Critical","system":"Roof","description":"Short one line description max 80 chars","location":"Location in home","cost_min":500,"cost_max":2000,"priority":"Fix before closing","notes":"Short reason max 60 chars"}}]}}
 
         Categories: Critical=safety or structural, Important=repair soon, Minor=cosmetic
         Systems: Roof, HVAC, Plumbing, Electrical, Foundation, Pest, Mold, Structural, Drywall, Flooring, Water Heater, Windows, Appliances, Landscaping, Gutters, Garage, General
@@ -178,7 +178,7 @@ def generate_negotiation_strategy(result: dict, purchase_price: float, property_
 Repair estimate: ${result.get('estimated_total_min',0):,}-${result.get('estimated_total_max',0):,}
 Critical ({len(critical)}): {ctext}
 Important ({len(important)}): {itext}
-Write practical NC negotiation strategy: recommended approach, exact dollar amount, priority fixes, credit items, walk-away trigger, talking points."""
+Write practical NC negotiation strategy: which items seller must fix before closing, which items are acceptable as credit if seller refuses, walk-away trigger conditions, talking points for realtor. Do NOT mention specific dollar amounts — buyer will get real contractor quotes."""
         from vertexai.generative_models import GenerationConfig
         response = model.generate_content(
             prompt,
