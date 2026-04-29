@@ -124,6 +124,48 @@ DARK_THEME_CSS = """
     background: linear-gradient(135deg, #1a7fff, var(--accent-blue)) !important;
 }
 
+/* Fix button inner text elements */
+.stButton > button * {
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+}
+
+.stButton > button p {
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+    margin: 0 !important;
+}
+
+/* Fix ALL input text */
+input, textarea, select,
+[data-baseweb="input"] input,
+[data-baseweb="textarea"] textarea,
+.stTextInput input,
+.stNumberInput input,
+[data-testid="stTextInput"] input,
+[data-testid="stNumberInput"] input {
+    color: #F0F4FF !important;
+    -webkit-text-fill-color: #F0F4FF !important;
+    caret-color: #0D6EFD !important;
+    opacity: 1 !important;
+}
+
+/* Fix expander arrow + text overlap */
+details summary {
+    list-style: none !important;
+}
+
+[data-testid="stExpander"] summary {
+    color: #F0F4FF !important;
+    padding: 0.8rem 1rem !important;
+}
+
+[data-testid="stExpander"] summary p {
+    color: #F0F4FF !important;
+    display: inline !important;
+    -webkit-text-fill-color: #F0F4FF !important;
+}
+
 /* Primary/Analyze button — Red Capsule */
 .stButton > button[kind="primary"] {
     background: linear-gradient(135deg, var(--accent-red), #ff5a50) !important;
