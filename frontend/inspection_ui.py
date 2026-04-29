@@ -350,7 +350,12 @@ e.ulaganathan@gmail.com"""
         try:
             from inspection_cache import get_cached_strategy, save_strategy_to_cache
             pdf_bytes = st.session_state.get("inspection_pdf_bytes", b"")
-            cached_strategy = get_cached_strategy(pdf_bytes, address)
+            lookup_address = (
+                st.session_state.get("inspection_address") or
+                result.get("property_address") or
+                address or ""
+            )
+            cached_strategy = get_cached_strategy(pdf_bytes, lookup_address)
             if cached_strategy:
                 st.session_state["negotiation_strategy"] = cached_strategy
                 st.success("⚡ Loaded from cache instantly!")
