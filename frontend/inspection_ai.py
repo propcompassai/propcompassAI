@@ -133,6 +133,8 @@ def analyze_inspection_report(pdf_bytes: bytes, property_address: str = "") -> d
         text = re.sub(r',\s*([}\]])', r'\1', text)
         try:
             result = json.loads(text)
+            if not result.get("property_address"):
+                result["property_address"] = property_address
         except json.JSONDecodeError as je:
             logger.error(f"JSON error at position {je.pos}: {text[max(0,je.pos-100):je.pos+100]}")
             return _error_result(f"Could not parse AI response: {je}")

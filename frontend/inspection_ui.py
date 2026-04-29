@@ -359,17 +359,20 @@ e.ulaganathan@gmail.com"""
                     strategy = generate_negotiation_strategy(
                         result, purchase_price, address)
                     st.session_state["negotiation_strategy"] = strategy
-                    # Save to cache
-                    save_address = st.session_state.get("inspection_address", address)
-                    save_pdf     = st.session_state.get("inspection_pdf_bytes", b"")
-                    save_pdf_hash = __import__('hashlib').md5(save_pdf).hexdigest() if save_pdf else "EMPTY"
-                    st.write(f"DEBUG: address='{save_address}' pdf_len={len(save_pdf)} hash={save_pdf_hash}")
+                    # Get address from result itself as fallback
+                    save_address = (
+                        st.session_state.get("inspection_address") or
+                        result.get("property_address") or
+                        address or
+                        "unknown"
+                    )
+                    save_pdf = st.session_state.get("inspection_pdf_bytes", b"")
                     try:
                         from inspection_cache import save_strategy_to_cache
                         save_strategy_to_cache(save_pdf, save_address, strategy)
-                        st.success("Strategy cached!")
+                        logger.info(f"Strategy cached for: {save_address}")
                     except Exception as e:
-                        st.error(f"Cache error: {e}")
+                        logger.error(f"Cache error: {e}")
         except Exception as e:
             with st.spinner("Building your negotiation strategy..."):
                 strategy = generate_negotiation_strategy(

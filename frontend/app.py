@@ -1053,14 +1053,15 @@ with st.sidebar:
      # ── User Profile ──────────────────────────────────────────
     usage = get_user_usage(user["user_id"])
     st.markdown(f"""
-    <div style='background:#EFF6FF; border-radius:8px;
+    <div style='background:rgba(16,28,52,0.9); border-radius:8px;
+    border:1px solid rgba(99,130,255,0.15);
     padding:10px 14px; margin-bottom:12px;'>
-    <div style='font-size:13px; font-weight:600;
-    color:#1B3A6B;'>👤 {user.get('display_name', 'User')}</div>
-    <div style='font-size:11px; color:#6B7280;
+    <div style='font-size:13px; font-weight:700;
+    color:#F1F5F9;'>👤 {user.get('display_name', 'User')}</div>
+    <div style='font-size:11px; color:#94A3B8;
     margin-top:2px;'>{user.get('email', '')}</div>
-    <div style='font-size:11px; color:#6B7280; margin-top:4px;'>
-    Plan: <b>{usage.get('tier','free').upper()}</b> |
+    <div style='font-size:11px; color:#94A3B8; margin-top:4px;'>
+    Plan: <b style='color:#60A5FA;'>{usage.get('tier','free').upper()}</b> |
     {usage.get('used',0)}/{usage.get('limit',3)} analyses
     </div>
     </div>
