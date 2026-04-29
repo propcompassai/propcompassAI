@@ -234,7 +234,15 @@ e.ulaganathan@gmail.com"""
         st.info("📎 Remember to attach the full inspection PDF from your licensed inspector!")
 
         # Display email
-        st.code(st.session_state["repair_email"], language=None)
+        # Display email
+        st.markdown(f"""
+        <div style='background:#0D1B35;border:1px solid rgba(99,130,255,0.2);
+                    border-radius:10px;padding:20px;font-family:monospace;
+                    font-size:13px;line-height:1.8;color:#E2E8F0;
+                    white-space:pre-wrap;word-wrap:break-word;'>
+{st.session_state["repair_email"]}
+        </div>
+        """, unsafe_allow_html=True)
 
         # Copy button
         st.markdown(f"""
