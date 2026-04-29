@@ -339,17 +339,13 @@ e.ulaganathan@gmail.com"""
         st.success(rec)
 
     # ── Generate full strategy button ────────────────────────────────
-    if st.button(
-        "📋 Generate Full Negotiation Strategy",
-        use_container_width=True
-    ):
-        with st.spinner("Building your negotiation strategy..."):
-            strategy = generate_negotiation_strategy(result, purchase_price, address)
-            st.session_state["negotiation_strategy"] = strategy
-
-    if "negotiation_strategy" in st.session_state:
-        st.markdown("#### 📋 Full Negotiation Strategy")
-        st.markdown(st.session_state["negotiation_strategy"])
+    if st.button("📋 Generate Full Negotiation Strategy",
+                 use_container_width=True):
+        if "negotiation_strategy" not in st.session_state:
+            with st.spinner("Building your negotiation strategy..."):
+                strategy = generate_negotiation_strategy(
+                    result, purchase_price, address)
+                st.session_state["negotiation_strategy"] = strategy
 
     st.divider()
 
