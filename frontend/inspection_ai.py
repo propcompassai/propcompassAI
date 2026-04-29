@@ -73,6 +73,15 @@ def get_gemini_model():
     return GenerativeModel(MODEL_NAME)
 
 def analyze_inspection_report(pdf_bytes: bytes, property_address: str = "") -> dict:
+    # ── Check cache first ─────────────────────────────────────────
+    try:
+        from inspection_cache import get_cached_result, save_to_cache
+        cached = get_cached_result(pdf_bytes, property_address)
+        if cached:
+            return cached
+    except Exception as e:
+        logger.warning(f"Cache check failed: {e}")
+
     try:
         model = get_gemini_model()
         prompt = f"""You are a professional home inspector. Analyze this inspection report for: {property_address or 'the subject property'}.
@@ -80,7 +89,11 @@ Return ONLY valid JSON — no markdown, no explanation:
 {{"property_address":"{property_address}","summary":"2-3 sentence summary","total_issues":0,"critical_count":0,"important_count":0,"minor_count":0,"estimated_total_min":0,"estimated_total_max":0,"negotiation_recommendation":"Specific recommendation with dollar amount","issues":[{{"category":"Critical","system":"Roof","description":"Issue description","location":"Where in home","cost_min":500,"cost_max":2000,"priority":"Fix before closing","notes":"Why this matters"}}]}}
 Categories: Critical=safety/structural/major, Important=repair soon, Minor=cosmetic
 Systems: Roof, HVAC, Plumbing, Electrical, Foundation, Pest, Mold, Structural, Drywall, Flooring, Water Heater, Windows, Appliances, Landscaping, Gutters, Garage, General
-NC costs 2026: Foundation $3K-30K, Roof $8K-20K, HVAC $5K-12K, Electrical panel $1.5K-4K, Water heater $800-2K, Minor repairs $100-500
+NC CONTRACTOR RATES 2026 — use EXACTLY these ranges every time:
+CRITICAL: Foundation $3K-30K, Roof replacement $8K-20K, Roof sheathing $500-2K, Electrical panel $1.5K-4K, Structural $2K-10K, Water intrusion $1K-8K
+IMPORTANT: HVAC replacement $5K-12K, HVAC repair $150-600, Water heater $800-2K, Roof repair $300-1.5K, Window replacement $300-800each, Flooring $200-800, Plumbing $200-1.5K
+MINOR: Paint/trim $100-500, Door adjustment $50-200, Drywall $100-400, Doorbell $100-300, Door stoppers $20-100, Air filter $20-50, Garage door $50-200
+CRITICAL issues MUST have higher cost estimates. Be consistent — same issue = same cost range every time.
 Return ONLY the JSON object."""
         pdf_part = Part.from_data(data=pdf_bytes, mime_type="application/pdf")
         from vertexai.generative_models import GenerationConfig
@@ -112,6 +125,14 @@ Return ONLY the JSON object."""
             issue["vendor_icon"]          = vm["icon"]
             issue["recommended_vendors"]  = vm["vendors"]
         logger.info(f"Inspection analysis complete: {result['total_issues']} issues found")
+
+        # ── Save to cache ─────────────────────────────────────────
+        try:
+            from inspection_cache import save_to_cache
+            save_to_cache(pdf_bytes, property_address, result)
+        except Exception as e:
+            logger.warning(f"Cache save failed: {e}")
+
         return result
     except json.JSONDecodeError as e:
         return _error_result(f"Could not parse AI response: {e}")
@@ -134,7 +155,13 @@ Repair estimate: ${result.get('estimated_total_min',0):,}-${result.get('estimate
 Critical ({len(critical)}): {ctext}
 Important ({len(important)}): {itext}
 Write practical NC negotiation strategy: recommended approach, exact dollar amount, priority fixes, credit items, walk-away trigger, talking points."""
-        response = model.generate_content(prompt)
+        response = model.generate_content(
+            prompt,
+            generation_config=GenerationConfig(
+                temperature=0.1,
+                max_output_tokens=4096,
+            )
+        )
         return response.text
     except Exception as e:
         return f"Could not generate strategy: {str(e)}"
