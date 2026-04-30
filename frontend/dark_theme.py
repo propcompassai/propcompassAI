@@ -39,11 +39,27 @@ header[data-testid="stHeader"] {
     font-weight: 800 !important;
 }
 
-/* ── Buttons ──────────────────────────────────────────────── */
+/* ALL buttons text fix */
 .stButton > button {
     border-radius: 100px !important;
     font-weight: 700 !important;
     transition: all 0.2s !important;
+    opacity: 1 !important;
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+}
+
+.stButton > button *,
+.stButton > button p,
+.stButton > button span,
+.stButton > button div,
+[data-testid="baseButton-secondary"],
+[data-testid="baseButton-secondary"] p,
+[data-testid="baseButton-secondary"] * {
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+    opacity: 1 !important;
+    font-weight: 700 !important;
 }
 
 .stButton > button[kind="primary"] {
@@ -58,15 +74,13 @@ header[data-testid="stHeader"] {
 }
 
 .stButton > button[kind="secondary"] {
-    border-radius: 100px !important;
-    color: #F1F5F9 !important;
-    border: 1px solid rgba(99,130,255,0.3) !important;
+    background: rgba(13,110,253,0.15) !important;
+    border: 1.5px solid rgba(13,110,253,0.5) !important;
+    color: white !important;
 }
 
-.stButton > button[kind="secondary"] p,
-.stButton > button[kind="secondary"] * {
-    color: #F1F5F9 !important;
-    -webkit-text-fill-color: #F1F5F9 !important;
+.stButton > button[kind="secondary"]:hover {
+    background: rgba(13,110,253,0.3) !important;
 }
 
 /* ── Expanders ────────────────────────────────────────────── */
