@@ -358,7 +358,7 @@ e.ulaganathan@gmail.com"""
             cached_strategy = get_cached_strategy(pdf_bytes, lookup_address)
             if cached_strategy:
                 st.session_state["negotiation_strategy"] = cached_strategy
-                st.success("⚡ Loaded from cache instantly!")
+                pass
             else:
                 with st.spinner("Building your negotiation strategy..."):
                     strategy = generate_negotiation_strategy(
