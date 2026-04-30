@@ -344,7 +344,7 @@ e.ulaganathan@gmail.com"""
         st.success(rec)
 
     # ── Generate full strategy button ────────────────────────────────
-    if st.button("�� Generate Full Negotiation Strategy",
+    if st.button("📋 Generate Full Negotiation Strategy",
                  use_container_width=True):
         # Check cache first
         try:
