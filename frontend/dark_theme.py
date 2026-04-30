@@ -59,6 +59,14 @@ header[data-testid="stHeader"] {
 
 .stButton > button[kind="secondary"] {
     border-radius: 100px !important;
+    color: #F1F5F9 !important;
+    border: 1px solid rgba(99,130,255,0.3) !important;
+}
+
+.stButton > button[kind="secondary"] p,
+.stButton > button[kind="secondary"] * {
+    color: #F1F5F9 !important;
+    -webkit-text-fill-color: #F1F5F9 !important;
 }
 
 /* ── Expanders ────────────────────────────────────────────── */
