@@ -74,13 +74,14 @@ header[data-testid="stHeader"] {
 }
 
 .stButton > button[kind="secondary"] {
-    background: rgba(13,110,253,0.15) !important;
-    border: 1.5px solid rgba(13,110,253,0.5) !important;
+    background: rgba(13,110,253,0.25) !important;
+    border: 1.5px solid rgba(13,110,253,0.6) !important;
     color: white !important;
 }
 
 .stButton > button[kind="secondary"]:hover {
-    background: rgba(13,110,253,0.3) !important;
+    background: rgba(13,110,253,0.45) !important;
+    border-color: rgba(13,110,253,0.9) !important;
 }
 
 /* ── Expanders ────────────────────────────────────────────── */
