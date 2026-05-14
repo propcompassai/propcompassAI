@@ -163,6 +163,7 @@ def save_user_to_bigquery(
     except Exception as e:
         logger.error(f"BigQuery user save failed: {e}")
 
+@st.cache_data(ttl=60)
 def get_user_usage(user_id: str) -> dict:
     """Get user's analysis count for current month."""
     try:

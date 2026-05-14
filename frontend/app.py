@@ -167,6 +167,7 @@ _STATE_CENTERS = {
 }
 
 
+@st.cache_data(ttl=86400)
 def validate_and_autocomplete_address(
     partial_address: str,
     api_key: str,
@@ -223,6 +224,7 @@ def validate_and_autocomplete_address(
         return {"suggestions": [], "error": str(e)}
 
 
+@st.cache_data(ttl=86400)
 def get_place_details(place_id: str, api_key: str) -> dict:
     """
     Given a Google Place ID, returns full validated address details:
@@ -278,6 +280,7 @@ def get_place_details(place_id: str, api_key: str) -> dict:
         return {"error": str(e), "validated": False}
 
 # ── Helper Functions ──────────────────────────────────────────────
+@st.cache_data(ttl=3600, show_spinner=False)
 def call_analyze_api(
     address:          str,
     purchase_price:   float,
@@ -318,8 +321,9 @@ def call_analyze_api(
     return response.json()
 
 
+@st.cache_data(ttl=1800)
 def get_current_rates() -> dict:
-    """Get current mortgage rates from API."""
+    """Get current mortgage rates from API. Cached 30 mins."""
     try:
         response = requests.get(f"{API_URL}/rates", timeout=10)
         return response.json()
@@ -522,6 +526,7 @@ def format_pct(value: float) -> str:
 
 
 # ── Charts ────────────────────────────────────────────────────────
+@st.cache_data(ttl=3600)
 def build_cashflow_chart(result: dict) -> go.Figure:
     """Build 5-year cash flow projection chart."""
     years      = [f"Year {y['year']}" for y in result["five_year"]]
@@ -568,6 +573,7 @@ def build_cashflow_chart(result: dict) -> go.Figure:
     return fig
 
 
+@st.cache_data(ttl=3600)
 def build_expense_breakdown_chart(result: dict) -> go.Figure:
     """Build expense breakdown donut chart with exact amounts."""
     breakdown = result.get("expense_breakdown", {})
@@ -657,6 +663,7 @@ def build_expense_breakdown_chart(result: dict) -> go.Figure:
 
     return fig
 
+@st.cache_data(ttl=3600)
 def build_neighborhood_gauge(score: float) -> go.Figure:
     """Build neighborhood score gauge chart."""
     if score >= 70:
@@ -692,6 +699,7 @@ def build_neighborhood_gauge(score: float) -> go.Figure:
     return fig
 
 
+@st.cache_data(ttl=3600)
 def build_deal_score_gauge(score: float, rec: str) -> go.Figure:
     """Build deal score gauge."""
     colors = {"BUY": "#16A34A", "WATCH": "#F59E0B", "AVOID": "#EF4444"}
