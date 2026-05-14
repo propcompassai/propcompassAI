@@ -53,16 +53,15 @@ class GeminiExplainer:
 
     def _init_gemini(self):
         try:
-            from dotenv import load_dotenv
-            from pathlib import Path
-            load_dotenv(Path(__file__).parent.parent / ".env")
-            from google import genai
-            api_key = os.getenv("GOOGLE_API_KEY")
-            if not api_key:
-                raise ValueError("GOOGLE_API_KEY not found in environment")
-            self.client    = genai.Client(api_key=api_key)
+            import vertexai
+            from vertexai.generative_models import GenerativeModel
+            vertexai.init(
+                project  = "propcompassai",
+                location = "us-central1"
+            )
+            self.model     = GenerativeModel("gemini-2.5-flash")
             self.available = True
-            logger.info("✅ Gemini initialized via Google GenAI SDK")
+            logger.info("✅ Gemini initialized via Vertex AI")
         except Exception as e:
             logger.warning(f"⚠️ Gemini unavailable: {e}")
             self.available = False
@@ -77,10 +76,7 @@ class GeminiExplainer:
             }
         try:
             prompt      = self._build_prompt(deal_result)
-            response    = self.client.models.generate_content(
-                model    = "gemini-2.5-flash",
-                contents = prompt,
-            )
+            response    = self.model.generate_content(prompt)
             explanation = response.text.strip()
             return {
                 "explanation": explanation,
@@ -229,10 +225,7 @@ Previous conversation:
 
             full_prompt = f"{system_prompt}\nInvestor: {clean_message}\nAssistant:"
 
-            response = self.client.models.generate_content(
-                model    = "gemini-2.5-flash",
-                contents = full_prompt,
-            )
+            response = self.model.generate_content(full_prompt)
 
             return {
                 "response": response.text.strip(),
