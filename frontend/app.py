@@ -45,6 +45,14 @@ st.set_page_config(
 st.markdown(DARK_THEME_CSS, unsafe_allow_html=True)
 st.markdown(FLOATING_CHAT_CSS, unsafe_allow_html=True)
 
+# ── Keep app warm + pre-load rates ────────────────────────────
+if "app_initialized" not in st.session_state:
+    st.session_state.app_initialized = True
+    try:
+        _ = get_current_rates()
+    except:
+        pass
+
 # ── Session State Initialization ──────────────────────────────────
 if "user"            not in st.session_state:
     st.session_state.user            = None
