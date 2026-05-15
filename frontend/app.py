@@ -1546,7 +1546,9 @@ if analyze_clicked:
 
 
                 # ── Gemini AI Explanation ─────────────────────────
+                # ── Gemini AI Explanation ─────────────────────────
                 st.markdown('<div class="section-header">🤖 AI Investment Analysis</div>', unsafe_allow_html=True)
+                st.write(f"DEBUG: exp in state = {bool(st.session_state.get('ai_explanation', ''))}")
 
                 with st.spinner("🤖 Gemini 2.5 Flash is analyzing this deal..."):
                     try:
