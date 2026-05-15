@@ -175,3 +175,18 @@ FLOATING_CHAT_CSS = """
     <div class="chat-btn">🧭</div>
 </div>
 """
+
+# Fix text area color
+EXTRA_CSS = """
+<style>
+textarea[disabled] {
+    color: #F1F5F9 !important;
+    -webkit-text-fill-color: #F1F5F9 !important;
+    opacity: 1 !important;
+    background: rgba(13,22,45,0.8) !important;
+    border: 1px solid rgba(99,130,255,0.3) !important;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+}
+</style>
+"""

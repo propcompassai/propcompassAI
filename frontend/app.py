@@ -32,7 +32,7 @@ from firebase_auth import (
     log_analysis,
 )
 load_dotenv(Path(__file__).parent.parent / ".env")
-from dark_theme import DARK_THEME_CSS, FLOATING_CHAT_CSS
+from dark_theme import DARK_THEME_CSS, FLOATING_CHAT_CSS, EXTRA_CSS
 
 # ── Page Configuration ────────────────────────────────────────────
 st.set_page_config(
@@ -44,6 +44,7 @@ st.set_page_config(
 
 st.markdown(DARK_THEME_CSS, unsafe_allow_html=True)
 st.markdown(FLOATING_CHAT_CSS, unsafe_allow_html=True)
+st.markdown(EXTRA_CSS, unsafe_allow_html=True)
 
 # ── Keep app warm + pre-load rates ────────────────────────────
 if "app_initialized" not in st.session_state:
