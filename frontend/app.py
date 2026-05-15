@@ -1561,7 +1561,13 @@ if analyze_clicked:
                         model_used   = explain_data.get("model", "AI")
                         status       = explain_data.get("status", "")
                         if explanation:
-                            st.success(f"💬 {explanation}")
+                            st.text_area(
+                                label="💬 AI Analysis",
+                                value=explanation,
+                                height=200,
+                                disabled=True,
+                                key="ai_exp_display"
+                            )
                             st.caption(f"⚡ Powered by {model_used}")
                             result["ai_explanation"] = explanation
                     except Exception as e:
