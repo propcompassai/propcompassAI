@@ -1565,9 +1565,10 @@ if analyze_clicked:
                             result["ai_explanation"] = explanation
                         if explanation:
                             st.markdown(f"""
-                            <div style='background:#EFF6FF; border-left:4px solid #2563EB;
+                            <div style='background:rgba(13,22,45,0.8);
+                            border-left:4px solid #0D6EFD;
                             border-radius:8px; padding:16px 20px; margin:8px 0;
-                            font-size:15px; color:#1E3A5F; line-height:1.6;'>
+                            font-size:14px; color:#CBD5E1; line-height:1.6;'>
                             💬 {explanation}
                             </div>
                             """, unsafe_allow_html=True)
