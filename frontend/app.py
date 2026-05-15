@@ -1547,30 +1547,25 @@ if analyze_clicked:
                     hide_index          = True,
                 )
 
-
-                # ── Gemini AI Explanation ─────────────────────────
-                # ── Gemini AI Explanation ─────────────────────────
+                        # ── Gemini AI Explanation ─────────────────────────
                 st.markdown('<div class="section-header">🤖 AI Investment Analysis</div>', unsafe_allow_html=True)
-                st.write(f"DEBUG: exp in state = {bool(st.session_state.get('ai_explanation', ''))}")
-
-                with st.spinner("🤖 Gemini 2.5 Flash is analyzing this deal..."):
+                with st.spinner("🤖 Gemini AI is analyzing this deal..."):
                     try:
                         explain_response = requests.post(
                             f"{API_URL}/explain",
                             json    = result,
                             timeout = 30,
                         )
-                        explain_data  = explain_response.json()
-                        explanation   = explain_data.get("explanation", "")
-                        model_used    = explain_data.get("model", "AI")
-                        status        = explain_data.get("status", "")
+                        explain_data = explain_response.json()
+                        explanation  = explain_data.get("explanation", "")
+                        model_used   = explain_data.get("model", "AI")
+                        status       = explain_data.get("status", "")
                         if explanation:
-                            st.session_state["ai_explanation"] = explanation
-                            st.session_state["ai_model"]       = model_used
-                            st.session_state["ai_status"]      = status
-
+                            st.success(f"💬 {explanation}")
+                            st.caption(f"⚡ Powered by {model_used}")
+                            result["ai_explanation"] = explanation
                     except Exception as e:
-                        st.caption(f"AI unavailable: {e}")
+                        st.warning(f"AI explanation unavailable: {e}")
 
                         # ── Show AI Explanation ───────────────────────────
                         exp = st.session_state.get("ai_explanation", "")
