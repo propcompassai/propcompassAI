@@ -1559,16 +1559,24 @@ if analyze_clicked:
                         explanation   = explain_data.get("explanation", "")
                         model_used    = explain_data.get("model", "AI")
                         status        = explain_data.get("status", "")
+                        if explanation:
+                            st.session_state["ai_explanation"] = explanation
+                            st.session_state["ai_model"]       = model_used
+                            st.session_state["ai_status"]      = status
+                    except Exception as e:
+                        st.session_state["ai_explanation"] = ""
+                        st.caption(f"AI explanation unavailable: {e}")
 
-                         # Save explanation to result for PDF
-                        if explanation:
-                            result["ai_explanation"] = explanation
-                        if explanation:
-                            st.info(f"💬 {explanation}")
-                            if status == "success":
-                                st.caption(f"⚡ Powered by {model_used}")
+                        # Show explanation from session state
+                        exp = st.session_state.get("ai_explanation", "")
+                        mod = st.session_state.get("ai_model", "")
+                        sta = st.session_state.get("ai_status", "")
+                        if exp:
+                            st.info(f"💬 {exp}")
+                            if sta == "success":
+                                st.caption(f"⚡ Powered by {mod}")
                             else:
-                                st.caption(f"�� {model_used}")
+                                st.caption(f"📊 {mod}")
 
                     except Exception as e:
                         st.caption("AI explanation unavailable.")
