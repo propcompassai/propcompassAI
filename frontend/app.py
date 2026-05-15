@@ -1430,7 +1430,10 @@ if analyze_clicked:
                 )
 
                  # Save result to session state for sidebar tax display
-                st.session_state.last_result = result
+                st.session_state.last_result    = result
+                st.session_state["ai_explanation"] = ""
+                st.session_state["ai_model"]       = ""
+                st.session_state["ai_status"]      = ""
                 # Log analysis for usage tracking
                 log_analysis(
                     user_id        = user["user_id"],
