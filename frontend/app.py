@@ -1563,13 +1563,13 @@ if analyze_clicked:
                             st.session_state["ai_explanation"] = explanation
                             st.session_state["ai_model"]       = model_used
                             st.session_state["ai_status"]      = status
-                    except Exception as e:
-                        st.session_state["ai_explanation"] = ""
-                        st.caption(f"AI explanation unavailable: {e}")
 
-                        # Show explanation from session state
+                    except Exception as e:
+                        st.caption(f"AI unavailable: {e}")
+
+                        # ── Show AI Explanation ───────────────────────────
                         exp = st.session_state.get("ai_explanation", "")
-                        mod = st.session_state.get("ai_model", "")
+                        mod = st.session_state.get("ai_model", "AI")
                         sta = st.session_state.get("ai_status", "")
                         if exp:
                             st.info(f"💬 {exp}")
@@ -1577,9 +1577,6 @@ if analyze_clicked:
                                 st.caption(f"⚡ Powered by {mod}")
                             else:
                                 st.caption(f"📊 {mod}")
-
-                    except Exception as e:
-                        st.caption("AI explanation unavailable.")
 
                 # ── PDF Download ──────────────────────────────────
                 st.markdown('<div class="section-header">📄 Download Report</div>', unsafe_allow_html=True)
