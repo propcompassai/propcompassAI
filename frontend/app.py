@@ -1221,7 +1221,7 @@ with st.sidebar:
 if "current_page" not in st.session_state:
     st.session_state.current_page = "Deal Analyzer"
 
-page_col1, page_col2, page_col3 = st.columns([1, 1, 2])
+page_col1, page_col2, page_col3 = st.columns([1, 1, 1])
 with page_col1:
     if st.button("🔍 Deal Analyzer",
                  use_container_width=True,
@@ -1234,6 +1234,21 @@ with page_col2:
                  type="primary" if st.session_state.current_page == "Inspection AI" else "secondary"):
         st.session_state.current_page = "Inspection AI"
         st.rerun()
+with page_col3:
+    _u = st.session_state.get("cached_usage", {})
+    if _u.get("tier", "free") == "free":
+        if st.button("⚡ Upgrade to Pro",
+                     use_container_width=True,
+                     type="primary",
+                     key="nav_upgrade_btn"):
+            st.session_state.current_page = "Upgrade"
+            st.rerun()
+    else:
+        st.markdown("""<div style='background:rgba(13,110,253,0.15);
+border:1px solid rgba(13,110,253,0.4);border-radius:8px;
+padding:8px;text-align:center;color:#60A5FA;
+font-size:12px;font-weight:700;'>⚡ PRO ACTIVE</div>
+""", unsafe_allow_html=True)
 
 st.markdown("---")
 
