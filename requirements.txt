@@ -18,3 +18,4 @@ firebase-admin
 pyrebase4
 reportlab==4.1.0
 google-cloud-aiplatform>=1.38.0
+stripe>=7.0.0

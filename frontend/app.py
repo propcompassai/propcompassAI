@@ -33,6 +33,7 @@ from firebase_auth import (
 )
 load_dotenv(Path(__file__).parent.parent / ".env")
 from dark_theme import DARK_THEME_CSS, FLOATING_CHAT_CSS, EXTRA_CSS
+from stripe_billing import render_upgrade_banner, render_pricing_page, check_upgrade_success
 
 # ── Page Configuration ────────────────────────────────────────────
 st.set_page_config(
@@ -45,6 +46,9 @@ st.set_page_config(
 st.markdown(DARK_THEME_CSS, unsafe_allow_html=True)
 st.markdown(FLOATING_CHAT_CSS, unsafe_allow_html=True)
 st.markdown(EXTRA_CSS, unsafe_allow_html=True)
+
+# ── Check Stripe upgrade success ─────────────────────────────
+check_upgrade_success()
 
 # ── Keep app warm + pre-load rates ────────────────────────────
 if "app_initialized" not in st.session_state:
@@ -1089,6 +1093,9 @@ with st.sidebar:
         st.session_state.chat_history = []
         st.session_state.last_result  = {}
         st.rerun()
+    # ── Upgrade Banner ────────────────────────────────────────
+    render_upgrade_banner(user, usage)
+
     st.markdown("---")
     st.markdown("### 📊 Current Market")
 
@@ -1234,6 +1241,10 @@ st.markdown("---")
 if st.session_state.current_page == "Inspection AI":
     from inspection_ui import render_inspection_page
     render_inspection_page(user=st.session_state.get("user"))
+    st.stop()
+
+if st.session_state.current_page == "Upgrade":
+    render_pricing_page(user=st.session_state.get("user", {}))
     st.stop()
 
 # ── Main Input Form ───────────────────────────────────────────────
