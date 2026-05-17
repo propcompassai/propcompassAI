@@ -1097,6 +1097,28 @@ with st.sidebar:
     render_upgrade_banner(user, usage)
 
     st.markdown("---")
+    # ── Navigation ────────────────────────────────────────────
+    st.markdown("### 📱 Navigation")
+    for _label, _page in [
+        ("🔍 Deal Analyzer", "Deal Analyzer"),
+        ("📋 Inspection AI", "Inspection AI"),
+        ("📊 My Deals",      "My Deals"),
+    ]:
+        _active = st.session_state.get("current_page") == _page
+        if st.button(_label, use_container_width=True,
+                     type="primary" if _active else "secondary",
+                     key=f"sidenav_{_page.replace(' ','_')}"):
+            st.session_state.current_page = _page
+            st.rerun()
+    if usage.get("tier","free") == "free":
+        if st.button("⚡ Upgrade to Pro — $29/mo",
+                     use_container_width=True, type="primary",
+                     key="sidebar_upgrade_btn"):
+            st.session_state.current_page = "Upgrade"
+            st.rerun()
+    else:
+        st.markdown("<div style='background:rgba(13,110,253,0.15);border:1px solid rgba(13,110,253,0.4);border-radius:8px;padding:8px;text-align:center;color:#60A5FA;font-size:12px;font-weight:700;margin-bottom:8px;'>⚡ PRO ACTIVE</div>", unsafe_allow_html=True)
+    st.markdown("---")
     st.markdown("### 📊 Current Market")
 
     # Show live rates
@@ -1221,36 +1243,6 @@ with st.sidebar:
 if "current_page" not in st.session_state:
     st.session_state.current_page = "Deal Analyzer"
 
-page_col1, page_col2, page_col3 = st.columns([1, 1, 1])
-with page_col1:
-    if st.button("🔍 Deal Analyzer",
-                 use_container_width=True,
-                 type="primary" if st.session_state.current_page == "Deal Analyzer" else "secondary"):
-        st.session_state.current_page = "Deal Analyzer"
-        st.rerun()
-with page_col2:
-    if st.button("📋 Inspection AI",
-                 use_container_width=True,
-                 type="primary" if st.session_state.current_page == "Inspection AI" else "secondary"):
-        st.session_state.current_page = "Inspection AI"
-        st.rerun()
-with page_col3:
-    _u = st.session_state.get("cached_usage", {})
-    if _u.get("tier", "free") == "free":
-        if st.button("⚡ Upgrade to Pro",
-                     use_container_width=True,
-                     type="primary",
-                     key="nav_upgrade_btn"):
-            st.session_state.current_page = "Upgrade"
-            st.rerun()
-    else:
-        st.markdown("""<div style='background:rgba(13,110,253,0.15);
-border:1px solid rgba(13,110,253,0.4);border-radius:8px;
-padding:8px;text-align:center;color:#60A5FA;
-font-size:12px;font-weight:700;'>⚡ PRO ACTIVE</div>
-""", unsafe_allow_html=True)
-
-st.markdown("---")
 
 # ── Route to correct page ─────────────────────────────────────────
 if st.session_state.current_page == "Inspection AI":
@@ -1260,6 +1252,11 @@ if st.session_state.current_page == "Inspection AI":
 
 if st.session_state.current_page == "Upgrade":
     render_pricing_page(user=st.session_state.get("user", {}))
+    st.stop()
+
+if st.session_state.current_page == "My Deals":
+    st.markdown("### 📊 My Deal History")
+    st.info("🚧 Coming soon! Your analyzed deals will appear here.")
     st.stop()
 
 # ── Main Input Form ───────────────────────────────────────────────
