@@ -200,7 +200,7 @@ def get_user_usage(user_id: str) -> dict:
         logger.error(f"Usage check failed: {e}")
         return {"tier": "free", "used": 0, "limit": 3, "remaining": 3, "can_analyze": True}
 
-def log_analysis(user_id: str, address: str, recommendation: str):
+def log_analysis(user_id: str, address: str, recommendation: str, deal_score: float = 0.0, cap_rate: float = 0.0, purchase_price: float = 0.0, monthly_rent: float = 0.0, analysis_type: str = "Deal Analyzer"):
     """Log an analysis to BigQuery for usage tracking."""
     try:
         client = get_bigquery_client()
