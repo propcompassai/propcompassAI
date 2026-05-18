@@ -9,6 +9,7 @@ Run locally:  streamlit run frontend/app.py
 Deploy:       Streamlit Cloud (free)
 """
 
+from fastapi import logger
 import streamlit as st
 import requests
 import plotly.graph_objects as go
@@ -34,6 +35,20 @@ from firebase_auth import (
 load_dotenv(Path(__file__).parent.parent / ".env")
 from dark_theme import DARK_THEME_CSS, FLOATING_CHAT_CSS, EXTRA_CSS
 from stripe_billing import render_upgrade_banner, render_pricing_page, check_upgrade_success
+
+from my_deals import render_my_deals_page
+ 
+# In your sidebar nav (wherever Deal Analyzer / Inspection AI are):
+with st.sidebar:
+    page = st.radio(
+        "Navigation",
+        ["🏠 Deal Analyzer", "🔍 Inspection AI", "📁 My Deals"],
+        label_visibility="collapsed"
+    )
+ 
+# In your main page routing:
+if page == "📁 My Deals":
+    render_my_deals_page(user=st.session_state.get("user"))
 
 # ── Page Configuration ────────────────────────────────────────────
 st.set_page_config(
@@ -1459,11 +1474,21 @@ if analyze_clicked:
                 st.session_state["ai_model"]       = ""
                 st.session_state["ai_status"]      = ""
                 # Log analysis for usage tracking
-                log_analysis(
-                    user_id        = user["user_id"],
-                    address        = address,
-                    recommendation = result.get("recommendation", ""),
-                )
+                # Log analysis for usage tracking
+                try:
+                    user_id = (st.session_state.get("user") or {}).get("uid", "")
+                    log_analysis(
+                        user_id       = user_id,
+                        address       = address,
+                        recommendation= result.get("recommendation", ""),
+                        deal_score    = float(result.get("deal_score", 0)),
+                        cap_rate      = float(result.get("cap_rate", 0)),
+                        purchase_price= float(purchase_price),
+                        monthly_rent  = float(monthly_rent),
+                        analysis_type = "Deal Analyzer",
+                    )
+                except Exception as e:
+                    logger.error(f"log_analysis call failed: {e}")
                 # ── Recommendation Banner ─────────────────────────
                 st.markdown("---")
                 rec = result["recommendation"]

@@ -206,13 +206,19 @@ def log_analysis(user_id: str, address: str, recommendation: str):
         client = get_bigquery_client()
         query  = f"""
             INSERT INTO `propcompassai.prop_compass.user_analyses`
-            (analysis_id, user_id, address, recommendation, analyzed_at)
+            (analysis_id, user_id, address, recommendation, analyzed_at,
+             deal_score, cap_rate, purchase_price, monthly_rent, analysis_type)
             VALUES (
                 GENERATE_UUID(),
                 '{user_id}',
                 '{address[:200]}',
                 '{recommendation}',
-                CURRENT_TIMESTAMP()
+                CURRENT_TIMESTAMP(),
+                {float(deal_score)},
+                {float(cap_rate)},
+                {float(purchase_price)},
+                {float(monthly_rent)},
+                '{analysis_type}'
             )
         """
         client.query(query).result()
