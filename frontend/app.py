@@ -1477,7 +1477,12 @@ if analyze_clicked:
                 # Log analysis for usage tracking
                 try:
                     
-                    user_id = (st.session_state.get("user") or {}).get("uid", "")
+                    user = st.session_state.get("user") or {}
+                    user_id = (
+                        user.get("uid") or
+                        user.get("localId") or
+                        user.get("user_id") or ""
+                    )
                     # Add this RIGHT BEFORE the log_analysis call (line 1479)
                     print(f"DEBUG log_analysis: deal_score={result.get('deal_score')} cap_rate={result.get('cap_rate')} user_id={user_id} rec={result.get('recommendation')}")
                     log_analysis(
