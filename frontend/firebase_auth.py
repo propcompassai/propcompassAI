@@ -140,6 +140,9 @@ def save_user_to_bigquery(
     """Save or update user in BigQuery users table."""
     try:
         client = get_bigquery_client()
+        if not client:
+            logger.error("BQ client None - skipping log")
+            return
         query  = f"""
             MERGE `propcompassai.prop_compass.users` T
             USING (SELECT
@@ -204,6 +207,9 @@ def log_analysis(user_id: str, address: str, recommendation: str, deal_score: fl
     """Log an analysis to BigQuery for usage tracking."""
     try:
         client = get_bigquery_client()
+        if not client:                          # ← ADD THIS
+            logger.error("BQ client None")     # ← ADD THIS
+            return                             # ← ADD THIS
         query  = f"""
             INSERT INTO `propcompassai.prop_compass.user_analyses`
             (analysis_id, user_id, address, recommendation, analyzed_at,
