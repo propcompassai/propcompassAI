@@ -37,18 +37,7 @@ from dark_theme import DARK_THEME_CSS, FLOATING_CHAT_CSS, EXTRA_CSS
 from stripe_billing import render_upgrade_banner, render_pricing_page, check_upgrade_success
 
 from my_deals import render_my_deals_page
- 
-# In your sidebar nav (wherever Deal Analyzer / Inspection AI are):
-#with st.sidebar:
-#    page = st.radio(
-#        "Navigation",
-#        ["🏠 Deal Analyzer", "🔍 Inspection AI", "📁 My Deals"],
-#       label_visibility="collapsed"
- #   )
- 
-# In your main page routing:
-if page == "📁 My Deals":
-    render_my_deals_page(user=st.session_state.get("user"))
+
 
 # ── Page Configuration ────────────────────────────────────────────
 st.set_page_config(
