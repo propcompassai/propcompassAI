@@ -48,6 +48,7 @@ def fetch_user_deals(user_id: str) -> list[dict]:
                 analysis_type
             FROM `propcompassai.prop_compass.user_analyses`
             WHERE user_id = @user_id
+            AND deal_score IS NOT NULL
             ORDER BY analyzed_at DESC
             LIMIT 100
         """
