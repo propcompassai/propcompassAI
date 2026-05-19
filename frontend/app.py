@@ -1476,7 +1476,10 @@ if analyze_clicked:
                 # Log analysis for usage tracking
                 # Log analysis for usage tracking
                 try:
+                    
                     user_id = (st.session_state.get("user") or {}).get("uid", "")
+                    # Add this RIGHT BEFORE the log_analysis call (line 1479)
+                    print(f"DEBUG log_analysis: deal_score={result.get('deal_score')} cap_rate={result.get('cap_rate')} user_id={user_id} rec={result.get('recommendation')}")
                     log_analysis(
                         user_id       = user_id,
                         address       = address,
@@ -1489,6 +1492,7 @@ if analyze_clicked:
                     )
                 except Exception as e:
                     logger.error(f"log_analysis call failed: {e}")
+                    st.error(f"DEBUG log_analysis failed: {e}")
                 # ── Recommendation Banner ─────────────────────────
                 st.markdown("---")
                 rec = result["recommendation"]
