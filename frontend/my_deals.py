@@ -135,6 +135,7 @@ def render_my_deals_page(user: dict = None):
     with st.spinner("Loading your deals..."):
         deals = fetch_user_deals(user_id)
 
+    st.write(f"DEBUG: user_id={user_id} deals={len(deals)}")
     # ── Empty state ───────────────────────────────────────────────────
     if not deals:
         st.markdown("""
