@@ -293,10 +293,4 @@ def _kpi(col, label: str, value: str, color: str):
 
 
 def _stat_pill(label: str, value: str, color: str) -> str:
-    return f"""
-    <div style='display:flex;flex-direction:column;align-items:flex-start'>
-        <span style='color:#64748B;font-size:0.68rem;text-transform:uppercase;
-                     letter-spacing:0.06em'>{label}</span>
-        <span style='color:{color};font-weight:700;font-size:0.92rem'>{value}</span>
-    </div>
-    """
+    return f"<div style='display:flex;flex-direction:column;align-items:flex-start'><span style='color:#64748B;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em'>{label}</span><span style='color:{color};font-weight:700;font-size:0.92rem'>{value}</span></div>"
