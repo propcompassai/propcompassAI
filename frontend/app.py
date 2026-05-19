@@ -36,7 +36,7 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 from dark_theme import DARK_THEME_CSS, FLOATING_CHAT_CSS, EXTRA_CSS
 from stripe_billing import render_upgrade_banner, render_pricing_page, check_upgrade_success
 
-from my_deals import render_my_deals_page
+from my_analyses import render_my_analyses_page
 
 
 # ── Page Configuration ────────────────────────────────────────────
@@ -1106,7 +1106,7 @@ with st.sidebar:
     for _label, _page in [
         ("🔍 Deal Analyzer", "Deal Analyzer"),
         ("📋 Inspection AI", "Inspection AI"),
-        ("📊 My Deals",      "My Deals"),
+        ("📊 My Analyses",      "My Analyses"),
     ]:
         _active = st.session_state.get("current_page") == _page
         if st.button(_label, use_container_width=True,
@@ -1258,8 +1258,8 @@ if st.session_state.current_page == "Upgrade":
     render_pricing_page(user=st.session_state.get("user", {}))
     st.stop()
 
-if st.session_state.current_page == "My Deals":
-    render_my_deals_page(user=st.session_state.get("user"))
+if st.session_state.current_page == "My Analyses":
+    render_my_analyses_page(user=st.session_state.get("user"))
     st.stop()
 
 # ── Main Input Form ───────────────────────────────────────────────

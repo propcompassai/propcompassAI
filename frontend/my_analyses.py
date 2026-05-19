@@ -1,5 +1,5 @@
 """
-PropCompassAI — My Deals Dashboard
+PropCompassAI — My Analyses Dashboard
 Renders deal history from user_analyses BigQuery table.
 Add to frontend/app.py sidebar navigation.
 """
@@ -106,8 +106,8 @@ def _fmt_cap(val) -> str:
 
 
 # ── Main render ───────────────────────────────────────────────────────────────
-def render_my_deals_page(user: dict = None):
-    """Render the My Deals dashboard."""
+def render_my_analyses_page(user: dict = None):
+    """Render the My Analyses dashboard."""
 
     # ── Header ───────────────────────────────────────────────────────
     st.markdown("""
@@ -115,7 +115,7 @@ def render_my_deals_page(user: dict = None):
                 padding:1.5rem 1.8rem;border-radius:12px;
                 margin-bottom:1.5rem;
                 border:1px solid rgba(99,130,255,0.15)'>
-        <h2 style='color:white;margin:0;font-size:1.5rem'>📁 My Deals</h2>
+        <h2 style='color:white;margin:0;font-size:1.5rem'>📁 My Analyses</h2>
         <p style='color:#93C5FD;margin:0.3rem 0 0;font-size:0.9rem'>
             Your complete deal analysis history — scores, cap rates, and recommendations
         </p>
@@ -273,7 +273,7 @@ def render_my_deals_page(user: dict = None):
         st.download_button(
             label="⬇️ Export to CSV",
             data=csv,
-            file_name=f"my_deals_{datetime.now().strftime('%Y%m%d')}.csv",
+            file_name=f"my_analyses_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv",
             use_container_width=True,
         )
