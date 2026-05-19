@@ -1270,8 +1270,7 @@ if st.session_state.current_page == "Upgrade":
     st.stop()
 
 if st.session_state.current_page == "My Deals":
-    st.markdown("### 📊 My Deal History")
-    st.info("🚧 Coming soon! Your analyzed deals will appear here.")
+    render_my_deals_page(user=st.session_state.get("user"))
     st.stop()
 
 # ── Main Input Form ───────────────────────────────────────────────
