@@ -1075,18 +1075,6 @@ st.markdown("""
 
 # ── Sidebar ───────────────────────────────────────────────────────
 with st.sidebar:
-    # ── PropCompassAI Brand — TOP ─────────────────────────────
-    st.markdown("""
-    <div style='background:linear-gradient(135deg,#1B3A6B,#2D6A4F);
-                border-radius:8px;padding:8px 12px;margin-bottom:6px;
-                text-align:center;'>
-        <div style='font-size:15px;font-weight:800;color:white;
-                    letter-spacing:0.03em;'>🧭 PropCompassAI</div>
-        <div style='font-size:9px;color:#A8D5B5;margin-top:1px;'>
-            Powered by GCP + BigQuery ML</div>
-    </div>
-    """, unsafe_allow_html=True)
-
     # ── User Profile ──────────────────────────────────────────
     usage = get_user_usage(user["user_id"])
     st.markdown(f"""
@@ -1242,6 +1230,40 @@ if "ac_cache_key"             not in st.session_state:
     st.session_state.ac_cache_key             = ""
 if "ac_cache_results"         not in st.session_state:
     st.session_state.ac_cache_results         = {}
+
+# ── Hero Banner ───────────────────────────────────────────────────
+st.markdown('<div class="section-header">👋 Welcome to PropCompassAI</div>', unsafe_allow_html=True)
+
+col_a, col_b, col_c = st.columns(3)
+
+with col_a:
+    st.markdown("""
+    **🤖 AI-Powered Analysis**
+
+    Our BigQuery ML model trained on
+    219 real estate deals gives you
+    institutional-grade analysis in seconds.
+    """)
+
+with col_b:
+    st.markdown("""
+    **📊 8 Investment Metrics**
+
+    Cap rate, cash-on-cash return,
+    gross rent multiplier, 5-year
+    projection and more.
+    """)
+
+with col_c:
+    st.markdown("""
+    **📄 PDF Reports**
+
+    Download a professional PDF
+    report to share with partners,
+    lenders, or your team.
+    """)
+
+st.markdown("---")
 
 col1, col2, col3 = st.columns([3, 2, 2])
 
@@ -1669,39 +1691,6 @@ if analyze_clicked:
                 st.info("💡 Make sure the API is running at: " + API_URL)
 
 else:
-    # ── Welcome Screen ────────────────────────────────────────────
-    st.markdown('<div class="section-header">👋 Welcome to PropCompassAI</div>', unsafe_allow_html=True)
-
-    col_a, col_b, col_c = st.columns(3)
-
-    with col_a:
-        st.markdown("""
-        **🤖 AI-Powered Analysis**
-
-        Our BigQuery ML model trained on
-        219 real estate deals gives you
-        institutional-grade analysis in seconds.
-        """)
-
-    with col_b:
-        st.markdown("""
-        **📊 8 Investment Metrics**
-
-        Cap rate, cash-on-cash return,
-        gross rent multiplier, 5-year
-        projection and more.
-        """)
-
-    with col_c:
-        st.markdown("""
-        **📄 PDF Reports**
-
-        Download a professional PDF
-        report to share with partners,
-        lenders, or your team.
-        """)
-
-    st.markdown("---")
     st.info("👆 Enter a property address and details above, then click **Analyze This Deal**")
 
     # Sample analysis hint
