@@ -1075,38 +1075,56 @@ st.markdown("""
 
 # ── Sidebar ───────────────────────────────────────────────────────
 with st.sidebar:
-     # ── User Profile ──────────────────────────────────────────
-    usage = get_user_usage(user["user_id"])
-    st.markdown(f"""
-    <div style='background:rgba(16,28,52,0.9); border-radius:8px;
-    border:1px solid rgba(99,130,255,0.15);
-    padding:10px 14px; margin-bottom:12px;'>
-    <div style='font-size:13px; font-weight:700;
-    color:#F1F5F9;'>👤 {user.get('display_name', 'User')}</div>
-    <div style='font-size:11px; color:#94A3B8;
-    margin-top:2px;'>{user.get('email', '')}</div>
-    <div style='font-size:11px; color:#94A3B8; margin-top:4px;'>
-    Plan: <b style='color:#60A5FA;'>{usage.get('tier','free').upper()}</b> |
-    {usage.get('used',0)}/{usage.get('limit',3)} analyses
-    </div>
+    # ── PropCompassAI Brand — TOP ─────────────────────────────
+    st.markdown("""
+    <div style='background:linear-gradient(135deg,#1B3A6B,#2D6A4F);
+                border-radius:8px;padding:8px 12px;margin-bottom:6px;
+                text-align:center;'>
+        <div style='font-size:15px;font-weight:800;color:white;
+                    letter-spacing:0.03em;'>🧭 PropCompassAI</div>
+        <div style='font-size:9px;color:#A8D5B5;margin-top:1px;'>
+            Powered by GCP + BigQuery ML</div>
     </div>
     """, unsafe_allow_html=True)
 
-    if st.button("Sign Out", key="signout_btn", use_container_width=True):
-        st.session_state.user         = None
-        st.session_state.chat_history = []
-        st.session_state.last_result  = {}
-        st.rerun()
-    # ── Upgrade Banner ────────────────────────────────────────
-    render_upgrade_banner(user, usage)
+    # ── User Profile ──────────────────────────────────────────
+    usage = get_user_usage(user["user_id"])
+    st.markdown(f"""
+    <div style='background:rgba(16,28,52,0.9);border-radius:6px;
+    border:1px solid rgba(99,130,255,0.15);
+    padding:6px 10px;margin-bottom:4px;'>
+    <div style='font-size:12px;font-weight:700;color:#F1F5F9;'>
+    👤 {user.get('display_name','User')}</div>
+    <div style='font-size:10px;color:#94A3B8;margin-top:1px;'>
+    {user.get('email','')}</div>
+    <div style='font-size:10px;color:#94A3B8;margin-top:2px;'>
+    Plan: <b style='color:#60A5FA;'>{usage.get('tier','free').upper()}</b> |
+    {usage.get('used',0)}/{usage.get('limit',3)} analyses
+    </div></div>
+    """, unsafe_allow_html=True)
 
-    st.markdown("---")
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("Sign Out", key="signout_btn", use_container_width=True):
+            st.session_state.user         = None
+            st.session_state.chat_history = []
+            st.session_state.last_result  = {}
+            st.rerun()
+    with c2:
+        if usage.get("tier","free") == "free":
+            if st.button("⚡ Pro", use_container_width=True, type="primary",
+                         key="sidebar_upgrade_btn"):
+                st.session_state.current_page = "Upgrade"
+                st.rerun()
+        else:
+            st.markdown("<div style='background:rgba(13,110,253,0.15);border:1px solid rgba(13,110,253,0.4);border-radius:6px;padding:4px;text-align:center;color:#60A5FA;font-size:10px;font-weight:700;'>⚡ PRO</div>", unsafe_allow_html=True)
+
     # ── Navigation ────────────────────────────────────────────
-    st.markdown("### 📱 Navigation")
+    st.markdown("<div style='font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.08em;margin:6px 0 2px;'>Navigation</div>", unsafe_allow_html=True)
     for _label, _page in [
-        ("🔍 Deal Analyzer", "Deal Analyzer"),
-        ("📋 Inspection AI", "Inspection AI"),
-        ("📊 My Analyses",      "My Analyses"),
+        ("🔍 Deal Analyzer",  "Deal Analyzer"),
+        ("📋 Inspection AI",  "Inspection AI"),
+        ("📊 My Analyses",    "My Analyses"),
     ]:
         _active = st.session_state.get("current_page") == _page
         if st.button(_label, use_container_width=True,
@@ -1114,93 +1132,41 @@ with st.sidebar:
                      key=f"sidenav_{_page.replace(' ','_')}"):
             st.session_state.current_page = _page
             st.rerun()
-    if usage.get("tier","free") == "free":
-        if st.button("⚡ Upgrade to Pro — $29/mo",
-                     use_container_width=True, type="primary",
-                     key="sidebar_upgrade_btn"):
-            st.session_state.current_page = "Upgrade"
-            st.rerun()
-    else:
-        st.markdown("<div style='background:rgba(13,110,253,0.15);border:1px solid rgba(13,110,253,0.4);border-radius:8px;padding:8px;text-align:center;color:#60A5FA;font-size:12px;font-weight:700;margin-bottom:8px;'>⚡ PRO ACTIVE</div>", unsafe_allow_html=True)
-    st.markdown("---")
-    st.markdown("### 📊 Current Market")
 
-    # Show live rates
-    with st.spinner("Loading rates..."):
+    # ── Current Market ────────────────────────────────────────
+    st.markdown("<div style='font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.08em;margin:6px 0 2px;'>Current Market</div>", unsafe_allow_html=True)
+    with st.spinner(""):
         rates = get_current_rates()
+    rc1, rc2 = st.columns(2)
+    rc1.metric("30-Yr", f"{rates.get('current_30yr',7.0):.2f}%")
+    rc2.metric("15-Yr", f"{rates.get('current_15yr',6.0):.2f}%")
+    st.caption(f"As of: {rates.get('as_of','N/A')}")
 
-    st.metric(
-        "30-Year Rate",
-        f"{rates.get('current_30yr', 7.0):.2f}%",
-    )
-    st.metric(
-        "15-Year Rate",
-        f"{rates.get('current_15yr', 6.0):.2f}%",
-    )
-    st.caption(f"As of: {rates.get('as_of', 'N/A')}")
-
-    st.markdown("---")
-    st.markdown("### ⚙️ Analysis Settings")
-
-    down_payment = st.slider(
-        "Down Payment %",
-        min_value = 5,
-        max_value = 40,
-        value     = 20,
-        step      = 5,
-    )
-
-    mgmt_rate = st.slider(
-        "Property Management (% of rent)",
-        min_value = 0,
-        max_value = 15,
-        value     = 8,
-        step      = 1,
-        help      = "0% = self managed, 8% = standard, 12-15% = premium/vacation"
-    )
+    # ── Analysis Settings ─────────────────────────────────────
+    st.markdown("<div style='font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.08em;margin:6px 0 2px;'>Analysis Settings</div>", unsafe_allow_html=True)
+    down_payment = st.slider("Down Payment %", 5, 40, 20, 5)
+    mgmt_rate    = st.slider("Property Mgmt %", 0, 15, 8, 1,
+                             help="0%=self managed, 8%=standard, 12-15%=premium")
     if mgmt_rate == 0:
-        st.caption("Self managed — no management fee")
+        st.caption("Self managed")
     elif mgmt_rate <= 8:
-        st.caption(f"{mgmt_rate}% = standard property manager")
+        st.caption(f"{mgmt_rate}% = standard manager")
     else:
-        st.caption(f"{mgmt_rate}% = premium property manager")
+        st.caption(f"{mgmt_rate}% = premium manager")
     include_mgmt = mgmt_rate > 0
 
-    st.markdown("---")
-    st.markdown("### 🔧 Expense Assumptions")
-
-    vacancy_months = st.slider(
-        "Vacancy (months/year)",
-        min_value = 0.0,
-        max_value = 3.0,
-        value     = 1.0,
-        step      = 0.5,
-        help      = "How many months per year property sits vacant"
-    )
-    vacancy_rate = round((vacancy_months / 12) * 100, 2)
+    # ── Expense Assumptions ───────────────────────────────────
+    st.markdown("<div style='font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.08em;margin:6px 0 2px;'>Expense Assumptions</div>", unsafe_allow_html=True)
+    vacancy_months   = st.slider("Vacancy (mo/yr)", 0.0, 3.0, 1.0, 0.5,
+                                 help="Months/year property sits vacant")
+    vacancy_rate     = round((vacancy_months / 12) * 100, 2)
     st.caption(f"= {vacancy_rate}% vacancy rate")
+    maintenance_rate = st.slider("Maintenance %", 0.5, 5.0, 1.0, 0.5,
+                                 help="New:1%, Older:2-3%, Fixer:3-5%")
+    insurance_rate   = st.slider("Insurance %", 0.5, 1.5, 0.5, 0.25,
+                                 help="Standard:0.5%, High risk:1.0-1.5%")
 
-    maintenance_rate = st.slider(
-        "Maintenance (% of price/year)",
-        min_value = 0.5,
-        max_value = 5.0,
-        value     = 1.0,
-        step      = 0.5,
-        help      = "New homes: 1%, Older homes: 2-3%, Fixer upper: 3-5%"
-    )
-
-    insurance_rate = st.slider(
-        "Insurance (% of price/year)",
-        min_value = 0.5,
-        max_value = 1.5,
-        value     = 0.5,
-        step      = 0.25,
-        help      = "Standard: 0.5%, High risk area: 1.0-1.5%"
-    )
-
-    
-# Calculate estimated tax to show user
-    # Get estimated tax from last analysis if available
+    # Calculate estimated tax
     estimated_tax_annual = 0
     if "last_result" in st.session_state:
         tax_monthly = st.session_state.last_result.get(
@@ -1208,28 +1174,15 @@ with st.sidebar:
         ).get("tax_monthly", 0) or 0
         estimated_tax_annual = int(tax_monthly * 12)
 
-    tax_rate = st.slider(
-        "Property Tax Rate (% of price/year)",
-        min_value = 0.5,
-        max_value = 5.0,
-        value     = 1.2,
-        step      = 0.1,
-        help      = "Includes property + city + school taxes. Check county website for exact rate."
-    )
-    st.caption("NC: 1.0-1.2% | TX: 1.8-2.5% | NJ: 2.0-4.0% | NY/IL: up to 4-5%")
-    tax_annual = 0  # will be calculated from rate in API
+    tax_rate   = st.slider("Property Tax %", 0.5, 5.0, 1.2, 0.1,
+                           help="NC:1.0-1.2% | TX:1.8-2.5% | NJ:2.0-4.0%")
+    st.caption("NC:1.0-1.2% | TX:1.8-2.5% | NJ:2.0-4.0%")
+    tax_annual  = 0
+    hoa_monthly = st.number_input("HOA Monthly ($)", 0, 2000, 0, 25,
+                                  help="Enter 0 if none")
 
-    hoa_monthly = st.number_input(
-        "HOA Monthly ($)",
-        min_value = 0,
-        max_value = 2000,
-        value     = 0,
-        step      = 25,
-        help      = "Check listing for HOA fees. Enter 0 if none."
-    )
-   
-    st.markdown("---")
-    st.markdown("### 📖 Scoring Guide")
+    # ── Scoring Guide ─────────────────────────────────────────
+    st.markdown("<div style='font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.08em;margin:6px 0 2px;'>Scoring Guide</div>", unsafe_allow_html=True)
     st.markdown("""
     | Score | Rating |
     |-------|--------|
@@ -1237,9 +1190,6 @@ with st.sidebar:
     | 45-69  | 🟡 WATCH |
     | 0-44   | 🔴 AVOID |
     """)
-
-    st.markdown("---")
-    st.caption("PropCompassAI v1.0 | Powered by GCP + BigQuery ML")
 
 
 # ── Main Input Form ───────────────────────────────────────────────
